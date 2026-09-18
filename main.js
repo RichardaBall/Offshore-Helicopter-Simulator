@@ -1,0 +1,224 @@
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { setupScene } from './sceneSetup.js';
+import { WeatherSystem } from './weather.js';
+import { InputManager } from './inputManager.js';
+import { HelicopterPlayer } from './player.js';
+import { SoundManager } from './SoundManager.js';
+import { NavRadio } from './navRadio.js';
+import { NavIndicator } from './navIndicator.js';
+import { Kneeboard } from './kneeboard.js';
+import { WindFarm } from './windFarm.js';
+import { MainBase } from './mainbase.js';
+
+const { scene, camera, renderer, water, sunLight, ambientLight } = setupScene();
+const weatherSystem = new WeatherSystem();
+const inputManager = new InputManager();
+const soundManager = new SoundManager();
+const kneeboard = new Kneeboard();
+const windFarm = new WindFarm(scene);
+
+const clock = new THREE.Clock();
+
+let helicopterPlayer = null;
+let navRadio = null;
+let navIndicator = null;
+let mainBase = null;
+
+let redLight, greenLight, strobeLight, landingLight, cockpitLight;
+let redBulb, greenBulb, strobeBulb;
+let heliLightsGroup;
+let heliShadow = null;
+
+const loader = new GLTFLoader();
+
+// Initialize the Main Base, which loads mainbase.glb, adds base lighting, and spawns the helicopter on callback
+mainBase = new MainBase(scene, (spawnPosition) => {
+    loader.load('helicopter.glb', (gltfHeli) => {
+        const model = gltfHeli.scene;
+        model.position.copy(spawnPosition);
+        scene.add(model);
+
+        try {
+            const shadowGeo = new THREE.PlaneGeometry(4.0, 4.0);
+            shadowGeo.rotateX(-Math.PI / 2);
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            const gradient = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+            gradient.addColorStop(0, 'rgba(0, 0, 0, 0.7)');
+            gradient.addColorStop(0.5, 'rgba(0, 0, 0, 0.4)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 128, 128);
+
+            const shadowTexture = new THREE.CanvasTexture(canvas);
+            const shadowMat = new THREE.MeshBasicMaterial({
+                map: shadowTexture,
+                transparent: true,
+                depthWrite: false,
+            });
+
+            heliShadow = new THREE.Mesh(shadowGeo, shadowMat);
+            heliShadow.position.set(model.position.x, 0.05, model.position.z);
+            scene.add(heliShadow);
+        } catch (e) {
+            console.warn("Shadow mesh creation failed:", e);
+        }
+
+        heliLightsGroup = new THREE.Group();
+
+        redLight = new THREE.PointLight(0xff0000, 2.5, 8);
+        redLight.position.set(4.55, 1.50, 2.92);
+        heliLightsGroup.add(redLight);
+        redBulb = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
+        redBulb.position.copy(redLight.position);
+        heliLightsGroup.add(redBulb);
+
+        greenLight = new THREE.PointLight(0x00ff00, 2.5, 8);
+        greenLight.position.set(5.09, 1.44, -1.00);
+        heliLightsGroup.add(greenLight);
+        greenBulb = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), new THREE.MeshBasicMaterial({ color: 0x00ff00 }));
+        greenBulb.position.copy(greenLight.position);
+        heliLightsGroup.add(greenBulb);
+
+        strobeLight = new THREE.PointLight(0xffffff, 8.0, 15);
+        strobeLight.position.set(7.24, 4.39, 1.30);
+        heliLightsGroup.add(strobeLight);
+        strobeBulb = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+        strobeBulb.position.copy(strobeLight.position);
+        heliLightsGroup.add(strobeBulb);
+
+        landingLight = new THREE.SpotLight(0xffffee, 18.0, 60, Math.PI / 6, 0.4, 1);
+        landingLight.position.set(-4.66, -0.04, -0.35);
+        const landingTarget = new THREE.Object3D();
+        landingTarget.position.set(-25, -6, 0);
+        model.add(landingTarget);
+        landingLight.target = landingTarget;
+        heliLightsGroup.add(landingLight);
+
+        cockpitLight = new THREE.PointLight(0xffd27d, 3.5, 6);
+        cockpitLight.position.set(-3.60, 1.90, -0.18);
+        heliLightsGroup.add(cockpitLight);
+
+        model.add(heliLightsGroup);
+
+        window.addEventListener('keydown', (e) => {
+            if (!helicopterPlayer) return;
+            if (e.code === 'KeyE') helicopterPlayer.toggleEngine();
+            if (e.code === 'KeyG') helicopterPlayer.toggleLandingGear();
+        });
+
+        const mixer = new THREE.AnimationMixer(model);
+        helicopterPlayer = new HelicopterPlayer(model, gltfHeli.animations, mixer, soundManager);
+
+        // Initialize NDB Nav Radio system & 3D child-locked Indicator targeting the base spawn point
+        navRadio = new NavRadio(helicopterPlayer, spawnPosition);
+        navIndicator = new NavIndicator(helicopterPlayer, spawnPosition, navRadio, scene, model);
+    }, undefined, (error) => {
+        console.error("Helicopter model failed to load:", error);
+    });
+});
+
+function animate() {
+    requestAnimationFrame(animate);
+
+    const delta = clock.getDelta();
+
+    if (water && water.material && water.material.uniforms && water.material.uniforms['time']) {
+        water.material.uniforms['time'].value += delta * 0.3;
+    }
+
+    let weatherData = null;
+    try {
+        weatherData = weatherSystem.update(delta, scene, camera ? camera.position : null, sunLight, ambientLight);
+    } catch (err) {
+        console.error("Weather system update error:", err);
+    }
+
+    if (soundManager) {
+        soundManager.updateRainAudio(weatherData);
+    }
+
+    if (weatherSystem && weatherSystem.rainParticles && !scene.getObjectById(weatherSystem.rainParticles.id)) {
+        scene.add(weatherSystem.rainParticles);
+    }
+
+    // Update wind farm turbines
+    if (windFarm) {
+        windFarm.update(delta);
+    }
+
+    if (helicopterPlayer && helicopterPlayer.model) {
+        helicopterPlayer.update(delta, inputManager ? inputManager.keys : {}, weatherData);
+        
+        if (water) {
+            water.position.x = helicopterPlayer.model.position.x;
+            water.position.z = helicopterPlayer.model.position.z;
+        }
+
+        if (heliShadow) {
+            const groundLevel = helicopterPlayer.getCurrentGroundLevel ? helicopterPlayer.getCurrentGroundLevel() : 0;
+            const currentHeight = Math.max(0, helicopterPlayer.model.position.y - groundLevel);
+            
+            heliShadow.position.set(helicopterPlayer.model.position.x, groundLevel + 0.05, helicopterPlayer.model.position.z);
+            
+            const maxShadowHeight = 40.0;
+            const heightFactor = Math.max(0, 1.0 - (currentHeight / maxShadowHeight));
+            
+            const nightFactor = weatherData && weatherData.isNight ? 0.2 : 1.0;
+            if (heliShadow.material) {
+                heliShadow.material.opacity = Math.max(0.02, 0.6 * heightFactor * nightFactor);
+            }
+            
+            const scale = Math.max(0.5, 1.5 - (currentHeight * 0.02));
+            heliShadow.scale.set(scale, scale, scale);
+        }
+
+        const electricalActive = helicopterPlayer.isElectricalOn;
+        if (redLight && greenLight && landingLight && cockpitLight) {
+            redLight.intensity = electricalActive ? 2.5 : 0.0;
+            greenLight.intensity = electricalActive ? 2.5 : 0.0;
+            if (redBulb) redBulb.visible = electricalActive;
+            if (greenBulb) greenBulb.visible = electricalActive;
+
+            landingLight.intensity = (electricalActive && inputManager && inputManager.landingLightOn) ? 18.0 : 0.0;
+            cockpitLight.intensity = electricalActive ? 3.5 : 0.0;
+        }
+
+        if (inputManager && camera) {
+            const elevationAngle = 45 * (Math.PI / 180); 
+            const cosAlpha = Math.cos(elevationAngle);
+            const sinAlpha = Math.sin(elevationAngle);
+            const diagFactor = 0.7071;
+
+            const dist = inputManager.cameraDistance || 30;
+            const offsetX = dist * cosAlpha * diagFactor;
+            const offsetY = dist * sinAlpha;
+            const offsetZ = dist * cosAlpha * diagFactor;
+
+            const targetCameraPos = helicopterPlayer.model.position.clone().add(new THREE.Vector3(offsetX, offsetY, offsetZ));
+            camera.position.lerp(targetCameraPos, 0.1);
+            camera.lookAt(helicopterPlayer.model.position);
+        }
+    }
+
+    if (navRadio && helicopterPlayer && helicopterPlayer.model && camera) {
+        navRadio.update(camera, helicopterPlayer.model);
+    }
+    if (navIndicator && helicopterPlayer && helicopterPlayer.model && camera) {
+        navIndicator.update(camera, helicopterPlayer.model);
+    }
+
+    if (kneeboard) {
+        kneeboard.update(helicopterPlayer, weatherData);
+    }
+
+    if (renderer && scene && camera) {
+        renderer.render(scene, camera);
+    }
+}
+
+animate();
