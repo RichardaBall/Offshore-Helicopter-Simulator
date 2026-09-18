@@ -32,7 +32,30 @@ let redBulb, greenBulb, strobeBulb;
 let heliLightsGroup;
 let heliShadow = null;
 
-const loader = new GLTFLoader();
+// Loading Manager to track asset loading progress
+const loadingManager = new THREE.LoadingManager(
+    () => {
+        const loadingScreen = document.getElementById('loading-screen');
+        if (loadingScreen) {
+            loadingScreen.style.opacity = '0';
+            setTimeout(() => {
+                loadingScreen.style.display = 'none';
+            }, 600);
+        }
+    },
+    (url, itemsLoaded, itemsTotal) => {
+        const progressPercent = Math.round((itemsLoaded / itemsTotal) * 100);
+        const progressBar = document.getElementById('loading-progress');
+        const loadingStatus = document.getElementById('loading-status');
+        if (progressBar) progressBar.style.width = `${progressPercent}%`;
+        if (loadingStatus) loadingStatus.textContent = `Loading assets (${itemsLoaded}/${itemsTotal})... ${progressPercent}%`;
+    },
+    (url) => {
+        console.error('Error loading asset:', url);
+    }
+);
+
+const loader = new GLTFLoader(loadingManager);
 
 mainBase = new MainBase(scene, (spawnPosition) => {
     loader.load('helicopter.glb', (gltfHeli) => {
@@ -116,9 +139,8 @@ mainBase = new MainBase(scene, (spawnPosition) => {
         helicopterPlayer = new HelicopterPlayer(model, gltfHeli.animations, mixer, soundManager);
 
         navRadio = new NavRadio(helicopterPlayer, spawnPosition);
-        navIndicator = new NavIndicator(helicopterPlayer, spawnPosition, navRadio, scene, model);
+        navIndicator = new NavIndicator(helicopterPlayer, navRadio, model, { x: -1.6, y: 3.95, z: 0.16 });
 
-        // Hook up Sea Crash event with explicit check-and-close logic
         helicopterPlayer.onSeaCrash = (crashPos) => {
             console.log("AW189: Sea crash event triggered at position:", crashPos);
             if (helicopterPlayer && helicopterPlayer.model) {
@@ -135,7 +157,6 @@ mainBase = new MainBase(scene, (spawnPosition) => {
                 liferaftManager.deploy(crashPos);
             }
 
-            // Check if kneeboard is open/visible, then close it; otherwise do nothing
             if (kneeboard && kneeboard.domElement) {
                 const kbDisplay = window.getComputedStyle(kneeboard.domElement).display;
                 if (kbDisplay !== 'none') {
@@ -143,7 +164,6 @@ mainBase = new MainBase(scene, (spawnPosition) => {
                 }
             }
 
-            // Check if navRadio panel is open/visible, then close it; otherwise do nothing
             if (navRadio && navRadio.container) {
                 const navDisplay = window.getComputedStyle(navRadio.container).display;
                 if (navDisplay !== 'none') {
@@ -182,7 +202,8 @@ function animate() {
     }
 
     if (windFarm) {
-        windFarm.update(delta);
+        const heliPos = (helicopterPlayer && helicopterPlayer.model) ? helicopterPlayer.model.position : null;
+        windFarm.update(delta, heliPos);
     }
 
     if (liferaftManager) {
@@ -243,11 +264,11 @@ function animate() {
         }
     }
 
-    if (navRadio && helicopterPlayer && helicopterPlayer.model && camera) {
-        navRadio.update(camera, helicopterPlayer.model);
+    if (navRadio) {
+        navRadio.update();
     }
-    if (navIndicator && helicopterPlayer && helicopterPlayer.model && camera) {
-        navIndicator.update(camera, helicopterPlayer.model);
+    if (navIndicator) {
+        navIndicator.update();
     }
 
     if (kneeboard && helicopterPlayer && !helicopterPlayer.hasCrashedInSea) {

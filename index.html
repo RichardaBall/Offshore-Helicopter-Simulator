@@ -31,6 +31,60 @@
             opacity: 1.0;
             transform: scale(1.1);
         }
+        /* Loading Screen Overlay */
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at center, #111827 0%, #030712 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.6s ease-out;
+            color: #38bdf8;
+            font-family: monospace;
+        }
+        .loading-title {
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 3px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+        }
+        .loading-subtitle {
+            font-size: 12px;
+            color: #9ca3af;
+            letter-spacing: 1px;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+        }
+        .progress-bar-container {
+            width: 320px;
+            height: 6px;
+            background: #1f2937;
+            border-radius: 3px;
+            overflow: hidden;
+            border: 1px solid #374151;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+        }
+        #loading-progress {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #0284c7, #38bdf8);
+            transition: width 0.2s ease-out;
+            box-shadow: 0 0 10px #38bdf8;
+        }
+        #loading-status {
+            margin-top: 15px;
+            font-size: 13px;
+            color: #cbd5e1;
+            letter-spacing: 1px;
+        }
     </style>
     <!-- Import map for Three.js and addons -->
     <script type="importmap">
@@ -43,6 +97,16 @@
     </script>
 </head>
 <body>
+    <!-- Loading Screen Overlay -->
+    <div id="loading-screen">
+        <div class="loading-title">AW189 Simulation</div>
+        <div class="loading-subtitle">Offshore Flight Environment</div>
+        <div class="progress-bar-container">
+            <div id="loading-progress"></div>
+        </div>
+        <div id="loading-status">Initializing systems...</div>
+    </div>
+
     <button id="fullscreen-btn" title="Toggle Fullscreen">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M10 10L3 3"></path>

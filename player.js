@@ -10,15 +10,25 @@ export class HelicopterPlayer {
         this.hasCrashedInSea = false;
         this.onSeaCrash = null;
 
-        // Find the top strobe light for fuel warning indication
+        // Find and cache the top strobe light and its bulb mesh once (eliminates per-frame traverse lag)
         this.strobeLight = null;
         this.strobeOriginalColor = new THREE.Color(0xffffff);
+        this.strobeBulbMesh = null;
+
         this.model.traverse((child) => {
             if (child.isPointLight && child.position.y > 3.0) {
                 this.strobeLight = child;
                 this.strobeOriginalColor = child.color.clone();
             }
         });
+
+        if (this.strobeLight) {
+            this.model.traverse((child) => {
+                if (child.isMesh && child.position.distanceTo(this.strobeLight.position) < 0.1) {
+                    this.strobeBulbMesh = child;
+                }
+            });
+        }
         
         window.addEventListener('keydown', (event) => {
             if (event.ctrlKey && event.code === 'KeyW') {
@@ -254,15 +264,13 @@ export class HelicopterPlayer {
             }
         }
 
-        // --- Strobe Light Fuel Warning Indicator Logic ---
+        // --- Optimized Strobe Light Fuel Warning Indicator Logic (Zero Traverse Overhead) ---
         if (this.strobeLight) {
             if (!this.isElectricalOn) {
                 this.strobeLight.intensity = 0;
-                this.model.traverse((child) => {
-                    if (child.isMesh && child.position.distanceTo(this.strobeLight.position) < 0.1) {
-                        child.visible = false;
-                    }
-                });
+                if (this.strobeBulbMesh) {
+                    this.strobeBulbMesh.visible = false;
+                }
             } else {
                 const time = Date.now() * 0.001;
                 let flashRate = 4.0;
@@ -280,14 +288,12 @@ export class HelicopterPlayer {
                 const isStrobeActive = (Math.floor(time * flashRate) % 2) === 0;
                 this.strobeLight.intensity = isStrobeActive ? 8.0 : 0.0;
 
-                this.model.traverse((child) => {
-                    if (child.isMesh && child.position.distanceTo(this.strobeLight.position) < 0.1) {
-                        if (child.material) {
-                            child.material.color.copy(this.strobeLight.color);
-                        }
-                        child.visible = this.strobeLight.intensity > 0;
+                if (this.strobeBulbMesh) {
+                    if (this.strobeBulbMesh.material) {
+                        this.strobeBulbMesh.material.color.copy(this.strobeLight.color);
                     }
-                });
+                    this.strobeBulbMesh.visible = this.strobeLight.intensity > 0;
+                }
             }
         }
 

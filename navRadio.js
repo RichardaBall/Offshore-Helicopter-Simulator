@@ -1,44 +1,52 @@
 /**
  * navRadio.js
- * NDB Navigation Radio Module for Helicopter Flight Simulator.
- * Compact, half-size single-frequency avionics panel with animated tuning knob.
- * Hidden by default, toggled with [N].
+ * NDB Navigation Radio with 10 kHz steps, original visuals, and scalable station registry.
  */
+import * as THREE from 'three';
 
 export class NavRadio {
-    constructor(player, targetObjectOrPosition) {
+    constructor(player, rigAlphaPosition) {
         this.player = player;
-        this.targetPosition = targetObjectOrPosition;
-        
         this.powered = true;
-        this.activeFrequency = 210; // Default tuned to Oil Rig NDB frequency (210 kHz)
-        this.targetFrequency = 210; // Oil Rig NDB frequency
 
-        this.knobAngle = 0; // Rotation angle for tuning knob animation
+        const basePos = rigAlphaPosition || new THREE.Vector3(0, 0, 0);
+        const windFarmPos = basePos.clone().add(new THREE.Vector3(1200, 0, -1200));
 
-        // Cache last applied states to prevent DOM thrashing
+        // Station registry: easily add future locations here in the future
+        this.stations = {
+            210: { name: 'RIG ALPHA', position: basePos },
+            350: { name: 'WIND FARM', position: windFarmPos }
+        };
+
+        this.frequency = 210.0;
+        this.minFreq = 200.0;
+        this.maxFreq = 400.0;
+        this.stepSize = 10.0;
+        this.knobAngle = 0;
+
         this._lastFreqText = '';
         this._lastPowered = null;
         this._lastStatusText = '';
-        
+
         this.createElement();
         this.setupEventListeners();
+    }
+
+    getTargetPosition() {
+        const roundedFreq = Math.round(this.frequency);
+        const station = this.stations[roundedFreq];
+        return station ? station.position : null;
+    }
+
+    isTuned() {
+        const roundedFreq = Math.round(this.frequency);
+        return Boolean(this.stations[roundedFreq]);
     }
 
     createElement() {
         const existingPanel = document.getElementById('nav-radio-panel');
         if (existingPanel) existingPanel.remove();
 
-        const existingHudGauge = document.getElementById('nav-hud-gauge');
-        if (existingHudGauge) existingHudGauge.remove();
-
-        const existingCompass = document.getElementById('nav-compass-bar');
-        if (existingCompass) existingCompass.remove();
-
-        const existingRing = document.getElementById('nav-hud-ring');
-        if (existingRing) existingRing.remove();
-
-        // Radio Control Panel (Bottom Right) - Compact half-size avionics unit
         this.container = document.createElement('div');
         this.container.id = 'nav-radio-panel';
         this.container.style.cssText = `
@@ -54,13 +62,12 @@ export class NavRadio {
             color: #d1d5db;
             padding: 10px;
             z-index: 10000;
-            display: none; /* Hidden by default on game start */
+            display: none;
             user-select: none;
             pointer-events: auto;
         `;
 
         this.container.innerHTML = `
-            <!-- Corner Screws & Panel Header -->
             <div style="position: absolute; top: 4px; left: 6px; font-size: 7px; color: #555; font-weight: bold;">⊗</div>
             <div style="position: absolute; top: 4px; right: 6px; font-size: 7px; color: #555; font-weight: bold;">⊗</div>
             <div style="position: absolute; bottom: 4px; left: 6px; font-size: 7px; color: #555; font-weight: bold;">⊗</div>
@@ -74,7 +81,6 @@ export class NavRadio {
                 </div>
             </div>
 
-            <!-- Main Display & Control Deck -->
             <div style="background: #111215; border: 1px inset #2a2d32; border-radius: 3px; padding: 8px; display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <div style="font-size: 7px; color: #9ca3af; letter-spacing: 0.5px; margin-bottom: 2px;">ACTIVE kHz</div>
@@ -86,13 +92,11 @@ export class NavRadio {
                 </div>
             </div>
 
-            <!-- Bottom Section: Tuning Knob & Status Info -->
             <div style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center; padding: 0 2px;">
                 <div style="font-size: 7px; color: #9ca3af; line-height: 1.3;">
-                    <div>SCROLL TO TUNE</div>
-                    <div style="font-size: 6px; color: #6b7280;">190 - 460 kHz</div>
+                    <div id="nav-station-label">RIG ALPHA</div>
+                    <div style="font-size: 6px; color: #6b7280;">SCROLL TO TUNE</div>
                 </div>
-                <!-- Animated Rotary Knob Graphic -->
                 <div id="nav-tuning-knob" title="Scroll to tune frequency" style="width: 30px; height: 30px; background: radial-gradient(circle at 35% 35%, #4b5563, #1f2937); border-radius: 50%; border: 1.5px solid #374151; box-shadow: 0 3px 6px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; transition: transform 0.15s ease-out; transform: rotate(0deg);">
                     <div style="width: 3px; height: 10px; background: #9ca3af; position: absolute; top: 3px; border-radius: 1.5px;"></div>
                 </div>
@@ -100,11 +104,11 @@ export class NavRadio {
         `;
         document.body.appendChild(this.container);
 
-        // References
         this.freqDisplay = this.container.querySelector('#nav-freq-display');
         this.statusDisplay = this.container.querySelector('#nav-status-display');
         this.powerLed = this.container.querySelector('#nav-power-led');
         this.tuningKnob = this.container.querySelector('#nav-tuning-knob');
+        this.stationLabel = this.container.querySelector('#nav-station-label');
     }
 
     setupEventListeners() {
@@ -115,29 +119,25 @@ export class NavRadio {
                     e.preventDefault();
                     const panel = document.getElementById('nav-radio-panel');
                     if (panel) {
-                        const isVisible = panel.style.display === 'block';
-                        panel.style.display = isVisible ? 'none' : 'block';
+                        panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
                     }
                 }
             });
         }
 
-        const stopEvents = ['wheel', 'mousedown', 'mouseup', 'click', 'dblclick', 'contextmenu', 'pointerdown', 'pointerup', 'touchstart', 'touchend'];
-        stopEvents.forEach(eventType => {
-            this.container.addEventListener(eventType, (e) => {
-                e.stopPropagation();
-            }, { passive: true });
+        ['wheel', 'mousedown', 'mouseup', 'click', 'pointerdown'].forEach(eventType => {
+            this.container.addEventListener(eventType, (e) => e.stopPropagation());
         });
 
-        // Scroll listener to adjust frequency and animate the knob rotation
         this.container.addEventListener('wheel', (e) => {
             e.stopPropagation();
+            
             if (e.deltaY < 0) {
-                this.activeFrequency = Math.min(460, this.activeFrequency + 10);
-                this.knobAngle += 20;
+                this.frequency = Math.min(this.maxFreq, this.frequency + this.stepSize);
+                this.knobAngle += 25;
             } else {
-                this.activeFrequency = Math.max(190, this.activeFrequency - 10);
-                this.knobAngle -= 20;
+                this.frequency = Math.max(this.minFreq, this.frequency - this.stepSize);
+                this.knobAngle -= 25;
             }
 
             if (this.tuningKnob) {
@@ -149,15 +149,21 @@ export class NavRadio {
     }
 
     updateDisplay() {
-        const freqText = `${this.activeFrequency.toFixed(1)}`;
+        const freqText = this.frequency.toFixed(1);
+        const roundedFreq = Math.round(this.frequency);
+        const station = this.stations[roundedFreq];
+
         if (this._lastFreqText !== freqText) {
             this.freqDisplay.textContent = freqText;
+            if (this.stationLabel) {
+                this.stationLabel.textContent = station ? station.name : 'NO STATION';
+            }
             this._lastFreqText = freqText;
         }
 
-        const isTuned = (this.activeFrequency === this.targetFrequency);
-        let statusText = (isTuned && this.powered) ? 'LOCKED' : (this.powered ? 'NO SIG' : 'OFF');
-        let statusColor = (isTuned && this.powered) ? '#22d3ee' : (this.powered ? '#f59e0b' : '#ef4444');
+        const isStationTuned = this.isTuned();
+        let statusText = (isStationTuned && this.powered) ? 'LOCKED' : (this.powered ? 'NO SIG' : 'OFF');
+        let statusColor = (isStationTuned && this.powered) ? '#22d3ee' : (this.powered ? '#f59e0b' : '#ef4444');
 
         if (this._lastStatusText !== statusText) {
             this.statusDisplay.textContent = statusText;
@@ -166,40 +172,22 @@ export class NavRadio {
         }
 
         if (this._lastPowered !== this.powered) {
-            if (this.powered) {
-                this.powerLed.style.backgroundColor = '#ff3333';
-                this.powerLed.style.boxShadow = '0 0 5px #ff3333';
-            } else {
-                this.powerLed.style.backgroundColor = '#441111';
-                this.powerLed.style.boxShadow = 'none';
-            }
+            this.powerLed.style.backgroundColor = this.powered ? '#ff3333' : '#441111';
+            this.powerLed.style.boxShadow = this.powered ? '0 0 5px #ff3333' : 'none';
             this._lastPowered = this.powered;
         }
     }
 
     hide() {
-        if (this.container) {
-            this.container.style.display = 'none';
-        }
+        if (this.container) this.container.style.display = 'none';
     }
 
     show() {
-        if (this.container) {
-            this.container.style.display = 'block';
-        }
+        if (this.container) this.container.style.display = 'block';
     }
 
-    update(camera, helicopterMesh) {
-        try {
-            if (this.player && typeof this.player.isElectricalOn !== 'undefined') {
-                this.powered = Boolean(this.player.isElectricalOn);
-            } else {
-                this.powered = true;
-            }
-
-            this.updateDisplay();
-        } catch (err) {
-            console.warn('NavRadio update error:', err);
-        }
+    update() {
+        this.powered = (this.player && typeof this.player.isElectricalOn !== 'undefined') ? Boolean(this.player.isElectricalOn) : true;
+        this.updateDisplay();
     }
 }

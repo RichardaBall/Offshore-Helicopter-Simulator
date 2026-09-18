@@ -26,33 +26,33 @@ A 3D offshore helicopter flight simulation game built using Three.js, WebGL, and
 
 \* \*\*`weather.js`\*\*: Controls `WeatherSystem` (day/night celestial cycle, fog density, wind forces, drag/lift multipliers, and rain particle systems)\[cite: 1].
 
-\* \*\*`navRadio.js`\*\*: NDB Navigation Radio module rendering a compact bottom-right avionics tuning panel (`\[N]`) tracking frequency tuning and signal lock to the 210 kHz oil rig\[cite: 1].
+\* \*\*`navRadio.js`\*\*: NDB Navigation Radio module rendering a compact bottom-right avionics tuning panel (`\\\\\\\[N]`) tracking frequency tuning and signal lock to the 210 kHz oil rig\[cite: 1].
 
 \* \*\*`navIndicator.js`\*\*: 3D tactical NDB bearing indicator module; attaches a transparent ring bezel and a neon-glowing amber pointer needle directly to the helicopter rotor hub to display relative bearing to the NDB target\[cite: 1].
 
-\* \*\*`kneeboard.js`\*\*: Pilot Kneeboard module rendering a styled 4-page interactive kneeboard (`\[K]`) featuring flight controls reference, pre-flight/flight checklists, fuel and passenger weight manifests with seating arrangement, and an aviation chart displaying Rig Alpha NDB frequency at 210.0 kHz.
+\* \*\*`kneeboard.js`\*\*: Pilot Kneeboard module rendering a styled 4-page interactive kneeboard (`\\\\\\\[K]`) featuring flight controls reference, pre-flight/flight checklists, fuel and passenger weight manifests with seating arrangement, and an aviation chart displaying Rig Alpha NDB frequency at 210.0 kHz.
 
 \* \*\*`windFarm.js`\*\*: Wind Farm module spawning 3 wind turbines located to the North-East with independently rotating rotor blades and flashing red obstruction warning lights\[cite: 2].
 
-\* \*\*`lightPlacer.js`\*\*: Utility development tool for placing, undoing, and exporting oil rig light coordinates (`\[C]`, `\[Z]`, `\[P]`)\[cite: 1].
+\* \*\*`lightPlacer.js`\*\*: Utility development tool for placing, undoing, and exporting oil rig light coordinates (`\\\\\\\[C]`, `\\\\\\\[Z]`, `\\\\\\\[P]`)\[cite: 1].
 
 
 
 \### Core Controls \& Key Bindings
 
-\* \*\*`\[Q]`\*\*: Toggle Electrical System (Battery)\[cite: 1]
+\* \*\*`\\\\\\\[Q]`\*\*: Toggle Electrical System (Battery)\[cite: 1]
 
-\* \*\*`\[F]`\*\*: Toggle Fuel Pump\[cite: 1]
+\* \*\*`\\\\\\\[F]`\*\*: Toggle Fuel Pump\[cite: 1]
 
-\* \*\*`\[E]`\*\*: Toggle Engine Ignition / Fuel Cutoff\[cite: 1]
+\* \*\*`\\\\\\\[E]`\*\*: Toggle Engine Ignition / Fuel Cutoff\[cite: 1]
 
-\* \*\*`\[G]`\*\*: Toggle Landing Gear\[cite: 1]
+\* \*\*`\\\\\\\[G]`\*\*: Toggle Landing Gear\[cite: 1]
 
-\* \*\*`\[L]`\*\*: Toggle Landing Light\[cite: 1]
+\* \*\*`\\\\\\\[L]`\*\*: Toggle Landing Light\[cite: 1]
 
-\* \*\*`\[N]`\*\*: Toggle NDB Navigation Radio Panel\[cite: 1]
+\* \*\*`\\\\\\\[N]`\*\*: Toggle NDB Navigation Radio Panel\[cite: 1]
 
-\* \*\*`\[K]`\*\*: Toggle Pilot Kneeboard Display (and switch pages 1–4 when open)
+\* \*\*`\\\\\\\[K]`\*\*: Toggle Pilot Kneeboard Display (and switch pages 1–4 when open)
 
 \* \*\*`Arrow Keys`\*\*: Pitch / Roll / Turn movement\[cite: 1]
 
@@ -78,7 +78,7 @@ A 3D offshore helicopter flight simulation game built using Three.js, WebGL, and
 
 \* \*\*`helicopter.glb`\*\*: Primary 3D AW189 helicopter model with rotor animation mixers\[cite: 1].
 
-\* \*\*`oil\_rig.glb`\*\*: Offshore platform 3D model serving as the primary helipad and NDB beacon target\[cite: 1].
+\* \*\*`oil\\\\\\\_rig.glb`\*\*: Offshore platform 3D model serving as the primary helipad and NDB beacon target\[cite: 1].
 
 \* \*\*`WTG.glb`\*\*: 3D wind turbine model utilized by the wind farm module\[cite: 2].
 
@@ -101,4 +101,6 @@ A 3D offshore helicopter flight simulation game built using Three.js, WebGL, and
 5\. \*\*Ask for Missing Code\*\*: If a requested feature requires modifying an existing file and I have not provided that file in the chat, ask me to paste it before generating updated code\[cite: 1].
 
 6\. \*\*Scope Isolation \& Zero Unrequested Changes\*\*: Strictly no unprompted edits to working code, key bindings, or core flight mechanics. If a change impacts outside systems, you must explicitly notify me of the side effects before generating code\[cite: 1].
+
+7\. \*\*Strict User Code Retention\*\*: When a modification is requested for an existing module file, the AI MUST use the exact user-supplied source code as the baseline. The AI is strictly prohibited from substituting generic or placeholder class implementations when updating code, and must patch or integrate requested additions directly into the user's provided file structure.
 

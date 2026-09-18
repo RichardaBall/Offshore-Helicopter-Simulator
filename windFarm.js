@@ -10,6 +10,14 @@ export class WindFarm {
         loader.load('WTG.glb', (gltf) => {
             const baseModel = gltf.scene;
 
+            // Optimize base model template: Disable shadow casting/receiving to boost FPS near the wind farm
+            baseModel.traverse((child) => {
+                if (child.isMesh) {
+                    child.castShadow = false;
+                    child.receiveShadow = false;
+                }
+            });
+
             // Fixed position to the North-East (~1-minute flight time from the oil rig)
             const startPos = new THREE.Vector3(320, -0.95, -200);
             const spacing = 120; // 120 units between each turbine in the row
@@ -21,7 +29,7 @@ export class WindFarm {
                 const xPos = startPos.x + (i * spacing);
                 turbineGroup.position.set(xPos, startPos.y, startPos.z);
                 turbineGroup.scale.set(0.5, 0.5, 0.5);
-                turbineGroup.rotation.y = 0; // All facing the same direction
+                turbineGroup.rotation.y = 0;
 
                 this.scene.add(turbineGroup);
 
@@ -45,25 +53,26 @@ export class WindFarm {
                     }
                 });
 
-                // Fallback matching if keywords aren't present
                 if (!rotorMesh && meshes.length > 1) {
                     rotorMesh = meshes[1];
                 } else if (!rotorMesh && meshes.length === 1) {
                     rotorMesh = meshes[0];
                 }
 
-                // Randomize initial rotor angle so they start out of sync
                 if (rotorMesh) {
                     rotorMesh.rotation.z = Math.random() * Math.PI * 2;
                 }
 
-                // Add flashing red obstruction light on top of the tower
+                // Obstruction light (Using a glowing MeshBasicMaterial bulb without a heavy PointLight if possible, or keeping light optimized)
                 const lightGroup = new THREE.Group();
-                const light = new THREE.PointLight(0xff0000, 3.0, 15);
-                light.position.set(0, 85, 0); 
+                
+                // Point light with reduced range and no shadow casting
+                const light = new THREE.PointLight(0xff0000, 2.0, 10);
+                light.position.set(0, 85, 0);
+                light.castShadow = false;
                 lightGroup.add(light);
 
-                const bulbGeo = new THREE.SphereGeometry(0.5, 8, 8);
+                const bulbGeo = new THREE.SphereGeometry(0.5, 6, 6); // Low-poly sphere for performance
                 const bulbMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
                 const bulb = new THREE.Mesh(bulbGeo, bulbMat);
                 bulb.position.copy(light.position);
@@ -76,20 +85,30 @@ export class WindFarm {
                     rotor: rotorMesh,
                     light: light,
                     bulb: bulb,
-                    rotationSpeed: 1.2 + (i * 0.2) + Math.random() * 0.4, // Unique speed per turbine
-                    timeOffset: i * 2.5 + Math.random() * 5 // Staggered flash timing
+                    rotationSpeed: 1.2 + (i * 0.2) + Math.random() * 0.4,
+                    timeOffset: i * 2.5 + Math.random() * 5
                 });
             }
 
-            console.log("Successfully spawned 3 wind turbines.");
+            console.log("Successfully spawned 3 optimized wind turbines.");
 
         }, undefined, (error) => {
             console.error("WTG model failed to load for wind farm:", error);
         });
     }
 
-    update(delta) {
+    update(delta, helicopterPosition) {
+        const cullDistanceSq = 400.0 * 400.0; // Skip updating turbines further than 400 units away
+
         this.turbines.forEach((turbine) => {
+            // Distance culling check if helicopter position is provided
+            if (helicopterPosition) {
+                const distSq = turbine.group.position.distanceToSquared(helicopterPosition);
+                if (distSq > cullDistanceSq) {
+                    return; // Skip rotor animation and light updates when far away
+                }
+            }
+
             // Rotate each rotor independently
             if (turbine.rotor) {
                 turbine.rotor.rotation.z += delta * turbine.rotationSpeed;
@@ -100,7 +119,7 @@ export class WindFarm {
                 turbine.timeOffset += delta;
                 const cycle = turbine.timeOffset % 1.0;
                 const isOn = cycle < 0.4;
-                turbine.light.intensity = isOn ? 4.0 : 0.0;
+                turbine.light.intensity = isOn ? 3.0 : 0.0;
                 turbine.bulb.visible = isOn;
             }
         });
