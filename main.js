@@ -10,6 +10,7 @@ import { NavIndicator } from './navIndicator.js';
 import { Kneeboard } from './kneeboard.js';
 import { WindFarm } from './windFarm.js';
 import { MainBase } from './mainbase.js';
+import { LiferaftManager } from './liferaft.js';
 
 const { scene, camera, renderer, water, sunLight, ambientLight } = setupScene();
 const weatherSystem = new WeatherSystem();
@@ -17,6 +18,7 @@ const inputManager = new InputManager();
 const soundManager = new SoundManager();
 const kneeboard = new Kneeboard();
 const windFarm = new WindFarm(scene);
+const liferaftManager = new LiferaftManager(scene);
 
 const clock = new THREE.Clock();
 
@@ -32,7 +34,6 @@ let heliShadow = null;
 
 const loader = new GLTFLoader();
 
-// Initialize the Main Base, which loads mainbase.glb, adds base lighting, and spawns the helicopter on callback
 mainBase = new MainBase(scene, (spawnPosition) => {
     loader.load('helicopter.glb', (gltfHeli) => {
         const model = gltfHeli.scene;
@@ -114,9 +115,43 @@ mainBase = new MainBase(scene, (spawnPosition) => {
         const mixer = new THREE.AnimationMixer(model);
         helicopterPlayer = new HelicopterPlayer(model, gltfHeli.animations, mixer, soundManager);
 
-        // Initialize NDB Nav Radio system & 3D child-locked Indicator targeting the base spawn point
         navRadio = new NavRadio(helicopterPlayer, spawnPosition);
         navIndicator = new NavIndicator(helicopterPlayer, spawnPosition, navRadio, scene, model);
+
+        // Hook up Sea Crash event with explicit check-and-close logic
+        helicopterPlayer.onSeaCrash = (crashPos) => {
+            console.log("AW189: Sea crash event triggered at position:", crashPos);
+            if (helicopterPlayer && helicopterPlayer.model) {
+                helicopterPlayer.model.visible = false;
+            }
+            if (heliShadow) {
+                heliShadow.visible = false;
+            }
+            if (soundManager) {
+                soundManager.stopHelicopterEngine();
+                soundManager.playSplashSound();
+            }
+            if (liferaftManager) {
+                liferaftManager.deploy(crashPos);
+            }
+
+            // Check if kneeboard is open/visible, then close it; otherwise do nothing
+            if (kneeboard && kneeboard.domElement) {
+                const kbDisplay = window.getComputedStyle(kneeboard.domElement).display;
+                if (kbDisplay !== 'none') {
+                    kneeboard.domElement.style.display = 'none';
+                }
+            }
+
+            // Check if navRadio panel is open/visible, then close it; otherwise do nothing
+            if (navRadio && navRadio.container) {
+                const navDisplay = window.getComputedStyle(navRadio.container).display;
+                if (navDisplay !== 'none') {
+                    navRadio.container.style.display = 'none';
+                }
+            }
+        };
+
     }, undefined, (error) => {
         console.error("Helicopter model failed to load:", error);
     });
@@ -146,20 +181,23 @@ function animate() {
         scene.add(weatherSystem.rainParticles);
     }
 
-    // Update wind farm turbines
     if (windFarm) {
         windFarm.update(delta);
+    }
+
+    if (liferaftManager) {
+        liferaftManager.update(delta);
     }
 
     if (helicopterPlayer && helicopterPlayer.model) {
         helicopterPlayer.update(delta, inputManager ? inputManager.keys : {}, weatherData);
         
-        if (water) {
+        if (water && !helicopterPlayer.hasCrashedInSea) {
             water.position.x = helicopterPlayer.model.position.x;
             water.position.z = helicopterPlayer.model.position.z;
         }
 
-        if (heliShadow) {
+        if (heliShadow && !helicopterPlayer.hasCrashedInSea) {
             const groundLevel = helicopterPlayer.getCurrentGroundLevel ? helicopterPlayer.getCurrentGroundLevel() : 0;
             const currentHeight = Math.max(0, helicopterPlayer.model.position.y - groundLevel);
             
@@ -188,7 +226,7 @@ function animate() {
             cockpitLight.intensity = electricalActive ? 3.5 : 0.0;
         }
 
-        if (inputManager && camera) {
+        if (inputManager && camera && !helicopterPlayer.hasCrashedInSea) {
             const elevationAngle = 45 * (Math.PI / 180); 
             const cosAlpha = Math.cos(elevationAngle);
             const sinAlpha = Math.sin(elevationAngle);
@@ -212,7 +250,7 @@ function animate() {
         navIndicator.update(camera, helicopterPlayer.model);
     }
 
-    if (kneeboard) {
+    if (kneeboard && helicopterPlayer && !helicopterPlayer.hasCrashedInSea) {
         kneeboard.update(helicopterPlayer, weatherData);
     }
 

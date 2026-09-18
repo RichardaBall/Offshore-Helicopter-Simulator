@@ -177,6 +177,18 @@ export class NavRadio {
         }
     }
 
+    hide() {
+        if (this.container) {
+            this.container.style.display = 'none';
+        }
+    }
+
+    show() {
+        if (this.container) {
+            this.container.style.display = 'block';
+        }
+    }
+
     update(camera, helicopterMesh) {
         try {
             if (this.player && typeof this.player.isElectricalOn !== 'undefined') {

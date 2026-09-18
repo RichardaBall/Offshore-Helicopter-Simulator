@@ -7,6 +7,9 @@ export class HelicopterPlayer {
         this.soundManager = soundManager;
         this.actions = {};
 
+        this.hasCrashedInSea = false;
+        this.onSeaCrash = null;
+
         // Find the top strobe light for fuel warning indication
         this.strobeLight = null;
         this.strobeOriginalColor = new THREE.Color(0xffffff);
@@ -22,7 +25,6 @@ export class HelicopterPlayer {
                 event.preventDefault();
             }
 
-            // Press 'P' while hovering to log the exact coordinates to the F12 console
             if (event.code === 'KeyP') {
                 console.log(
                     `%c [SPAWN COORDINATES FOUND] `, 
@@ -190,6 +192,8 @@ export class HelicopterPlayer {
     }
 
     update(delta, keys, weatherData) {
+        if (this.hasCrashedInSea) return;
+
         if (this.mixer) this.mixer.update(delta);
 
         if (keys && keys['KeyQ']) {
@@ -360,7 +364,6 @@ export class HelicopterPlayer {
                 targetAltitude -= (this.maxAltitudeSpeed * this.enginePower * activeLiftMultiplier) * massFactor;
             }
         } else if (!isOnGround) {
-            // --- SETTLING & AUTOROTATION MODE ---
             if (this.model.position.y <= activeGroundLevel + 1.0 && this.enginePower < 0.01) {
                 targetAltitude -= 3.0;
             } else {
@@ -402,6 +405,14 @@ export class HelicopterPlayer {
         if (newY <= activeGroundLevel) {
             newY = activeGroundLevel;
             this.currentAltitudeSpeed = 0;
+
+            // --- Sea Crash Check ---
+            if (activeGroundLevel === this.seaLevel && !this.hasCrashedInSea) {
+                this.hasCrashedInSea = true;
+                if (this.onSeaCrash) {
+                    this.onSeaCrash(this.model.position.clone());
+                }
+            }
         }
 
         const maxCeilingMeters = this.maxCeilingFeet / 3.28084;
