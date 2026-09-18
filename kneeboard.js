@@ -179,39 +179,39 @@ export class Kneeboard {
             </div>
         `;
 
-        // Page 4: Aviation Chart & Nav Frequencies (Rig Alpha + North-East Wind Farm Row)
+        // Page 4: Aviation Chart & Nav Frequencies (Rig Alpha + Wind Farm NDB)
         this.page4El = document.createElement('div');
         this.page4El.style.cssText = this.getPageStyle(3);
         this.page4El.innerHTML = `
             <div style="font-weight: bold; text-align: center; text-decoration: underline; font-size: 11px; margin-bottom: 6px; color: #3a3525; letter-spacing: 0.5px;">AVIATION CHART</div>
 
-            <div style="position: relative; background: #cebfa0; border: 2px solid #4a4532; border-radius: 4px; padding: 5px; text-align: center; height: 130px; box-sizing: border-box; margin-bottom: 6px;">
+            <div style="position: relative; background: #cebfa0; border: 2px solid #4a4532; border-radius: 4px; padding: 5px; text-align: center; height: 115px; box-sizing: border-box; margin-bottom: 6px;">
                 <!-- Grid & Map SVG -->
-                <svg width="100%" height="100%" viewBox="0 0 200 115" style="display: block;">
+                <svg width="100%" height="100%" viewBox="0 0 200 100" style="display: block;">
                     <!-- Grid Lines -->
-                    <line x1="50" y1="0" x2="50" y2="115" stroke="#b8a882" stroke-dasharray="2,2" stroke-width="1"/>
-                    <line x1="100" y1="0" x2="100" y2="115" stroke="#a3936e" stroke-width="1.5"/>
-                    <line x1="150" y1="0" x2="150" y2="115" stroke="#b8a882" stroke-dasharray="2,2" stroke-width="1"/>
+                    <line x1="50" y1="0" x2="50" y2="100" stroke="#b8a882" stroke-dasharray="2,2" stroke-width="1"/>
+                    <line x1="100" y1="0" x2="100" y2="100" stroke="#a3936e" stroke-width="1.5"/>
+                    <line x1="150" y1="0" x2="150" y2="100" stroke="#b8a882" stroke-dasharray="2,2" stroke-width="1"/>
                     
-                    <line x1="0" y1="28" x2="200" y2="28" stroke="#b8a882" stroke-dasharray="2,2" stroke-width="1"/>
-                    <line x1="0" y1="57" x2="200" y2="57" stroke="#a3936e" stroke-width="1.5"/>
-                    <line x1="0" y1="85" x2="200" y2="85" stroke="#b8a882" stroke-dasharray="2,2" stroke-width="1"/>
+                    <line x1="0" y1="25" x2="200" y2="25" stroke="#b8a882" stroke-dasharray="2,2" stroke-width="1"/>
+                    <line x1="0" y1="50" x2="200" y2="50" stroke="#a3936e" stroke-width="1.5"/>
+                    <line x1="0" y1="75" x2="200" y2="75" stroke="#b8a882" stroke-dasharray="2,2" stroke-width="1"/>
 
                     <!-- Compass / North Arrow -->
-                    <g transform="translate(175, 18)">
+                    <g transform="translate(175, 15)">
                         <polygon points="0,-8 3,5 0,2 -3,5" fill="#4a4532"/>
                         <text x="0" y="-10" font-size="6" font-weight="bold" fill="#4a4532" text-anchor="middle">N</text>
                     </g>
 
                     <!-- Oil Rig Alpha Marker (Center) -->
-                    <g transform="translate(100, 57)">
+                    <g transform="translate(100, 50)">
                         <circle cx="0" cy="0" r="8" fill="none" stroke="#8b0000" stroke-width="1.5" stroke-dasharray="3,2"/>
                         <rect x="-4" y="-4" width="8" height="8" fill="#4a4532" rx="1"/>
                         <text x="0" y="-11" font-size="7" font-weight="bold" fill="#8b0000" text-anchor="middle">RIG ALPHA</text>
                     </g>
 
-                    <!-- Wind Farm Row Marker (North-East (~1 min flight away)) -->
-                    <g transform="translate(140, 32)">
+                    <!-- Wind Farm Row Marker (North-East) -->
+                    <g transform="translate(140, 28)">
                         <circle cx="0" cy="0" r="6" fill="none" stroke="#c05000" stroke-width="1.2" stroke-dasharray="2,1"/>
                         <circle cx="0" cy="0" r="2" fill="#c05000"/>
                         <text x="0" y="9" font-size="5" font-weight="bold" fill="#c05000" text-anchor="middle">WIND FARM</text>
@@ -226,9 +226,9 @@ export class Kneeboard {
                         <span><strong>RIG ALPHA NDB:</strong> (RGA)</span>
                         <span><strong>210.0 kHz</strong></span>
                     </div>
-                    <div style="display: flex; justify-content: space-between; color: #802000;">
-                        <span><strong>WIND FARM (NE):</strong> 3x WTG Row</span>
-                        <span><strong>OBSTACLE WARNING</strong></span>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span><strong>WIND FARM NDB:</strong> (WFM)</span>
+                        <span><strong>350.0 kHz</strong></span>
                     </div>
                 </div>
             </div>

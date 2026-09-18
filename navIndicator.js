@@ -1,6 +1,6 @@
 /**
  * navIndicator.js
- * 3D Tactical NDB Bearing Indicator with arrow length set to 0.6.
+ * 3D Tactical NDB Bearing Indicator visible only when nav radio is powered ON and a valid frequency is tuned.
  */
 import * as THREE from 'three';
 
@@ -169,10 +169,12 @@ export class NavIndicator {
     update() {
         if (!this.player || !this.helicopterMesh || !this.mesh || !this.navRadio) return;
 
-        const targetPos = typeof this.navRadio.getTargetPosition === 'function' ? this.navRadio.getTargetPosition() : null;
+        // Check power state, tuned state, and target position
+        const isPowered = typeof this.navRadio.isPowered === 'function' ? this.navRadio.isPowered() : (this.navRadio.powered === true);
         const isTuned = typeof this.navRadio.isTuned === 'function' ? this.navRadio.isTuned() : true;
+        const targetPos = typeof this.navRadio.getTargetPosition === 'function' ? this.navRadio.getTargetPosition() : null;
 
-        const shouldShow = isTuned && targetPos !== null;
+        const shouldShow = isPowered && isTuned && targetPos !== null;
         this.mesh.visible = shouldShow;
         if (!shouldShow) return;
 
