@@ -205,7 +205,7 @@ function animate() {
 
     if (windFarm) {
         const heliPos = (helicopterPlayer && helicopterPlayer.model) ? helicopterPlayer.model.position : null;
-        windFarm.update(delta, heliPos);
+        windFarm.update(delta, heliPos, waterSystem);
     }
 
     if (liferaftManager) {
