@@ -39,16 +39,27 @@ export class WindFarm {
                 }
             });
 
-            const startPos = new THREE.Vector3(320, -0.95, -200);
-            const spacing = 120;
+            // Original line configuration base distance reference (~377m magnitude),
+            // making the first turbine start at twice that distance (~750m) in a circle layout.
+            const baseRadius = 750;
+            const radiusIncrement = 180;
+            const angleStep = (Math.PI * 2) / 3; // Distribute in a circular arc pattern around main base (0,0,0)
 
             for (let i = 0; i < 3; i++) {
                 const turbineGroup = baseModel.clone(true);
 
-                const xPos = startPos.x + (i * spacing);
-                turbineGroup.position.set(xPos, startPos.y, startPos.z);
+                const currentRadius = baseRadius + (i * radiusIncrement);
+                const currentAngle = i * angleStep; // Spread around the circle
+
+                const xPos = Math.cos(currentAngle) * currentRadius;
+                const zPos = Math.sin(currentAngle) * currentRadius;
+                const yPos = -0.95;
+
+                turbineGroup.position.set(xPos, yPos, zPos);
                 turbineGroup.scale.set(0.5, 0.5, 0.5);
-                turbineGroup.rotation.y = 0;
+                
+                // Rotate turbine slightly to face the center origin or outward naturally
+                turbineGroup.rotation.y = -currentAngle + Math.PI / 2;
 
                 this.scene.add(turbineGroup);
 
@@ -113,7 +124,7 @@ export class WindFarm {
                 this.fireSpawnTriggered = true;
             }
 
-            console.log("Successfully spawned 3 optimized wind turbines with randomized fire behavior.");
+            console.log("Successfully spawned 3 circular wind turbines at increasing distances from the main base.");
 
         }, undefined, (error) => {
             console.error("WTG model failed to load for wind farm:", error);

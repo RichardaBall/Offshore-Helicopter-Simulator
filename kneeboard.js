@@ -174,13 +174,13 @@ export class Kneeboard {
             </div>
         `;
 
-        // Page 4: Aviation Chart & Nav Frequencies (Rig Alpha + Wind Farm NDB)
+        // Page 4: Aviation Chart & Nav Frequencies (Rig Alpha + All Wind Farm NDBs)
         this.page4El = document.createElement('div');
         this.page4El.style.cssText = this.getPageStyle(3);
         this.page4El.innerHTML = `
-            <div style="font-weight: bold; text-align: center; text-decoration: underline; font-size: 11px; margin-bottom: 6px; color: #3a3525; letter-spacing: 0.5px;">AVIATION CHART</div>
+            <div style="font-weight: bold; text-align: center; text-decoration: underline; font-size: 11px; margin-bottom: 5px; color: #3a3525; letter-spacing: 0.5px;">AVIATION CHART</div>
 
-            <div style="position: relative; background: #cebfa0; border: 2px solid #4a4532; border-radius: 4px; padding: 5px; text-align: center; height: 115px; box-sizing: border-box; margin-bottom: 6px;">
+            <div style="position: relative; background: #cebfa0; border: 2px solid #4a4532; border-radius: 4px; padding: 3px; text-align: center; height: 105px; box-sizing: border-box; margin-bottom: 5px;">
                 <!-- Grid & Map SVG -->
                 <svg width="100%" height="100%" viewBox="0 0 200 100" style="display: block;">
                     <!-- Grid Lines -->
@@ -193,37 +193,52 @@ export class Kneeboard {
                     <line x1="0" y1="75" x2="200" y2="75" stroke="#b8a882" stroke-dasharray="2,2" stroke-width="1"/>
 
                     <!-- Compass / North Arrow -->
-                    <g transform="translate(175, 15)">
+                    <g transform="translate(180, 15)">
                         <polygon points="0,-8 3,5 0,2 -3,5" fill="#4a4532"/>
                         <text x="0" y="-10" font-size="6" font-weight="bold" fill="#4a4532" text-anchor="middle">N</text>
                     </g>
 
                     <!-- Oil Rig Alpha Marker (Center) -->
                     <g transform="translate(100, 50)">
-                        <circle cx="0" cy="0" r="8" fill="none" stroke="#8b0000" stroke-width="1.5" stroke-dasharray="3,2"/>
-                        <rect x="-4" y="-4" width="8" height="8" fill="#4a4532" rx="1"/>
-                        <text x="0" y="-11" font-size="7" font-weight="bold" fill="#8b0000" text-anchor="middle">RIG ALPHA</text>
+                        <circle cx="0" cy="0" r="7" fill="none" stroke="#8b0000" stroke-width="1.5" stroke-dasharray="3,2"/>
+                        <rect x="-3" y="-3" width="6" height="6" fill="#4a4532" rx="1"/>
+                        <text x="0" y="-10" font-size="6" font-weight="bold" fill="#8b0000" text-anchor="middle">RIG ALPHA</text>
                     </g>
 
-                    <!-- Wind Farm Row Marker (North-East) -->
-                    <g transform="translate(140, 28)">
-                        <circle cx="0" cy="0" r="6" fill="none" stroke="#c05000" stroke-width="1.2" stroke-dasharray="2,1"/>
-                        <circle cx="0" cy="0" r="2" fill="#c05000"/>
-                        <text x="0" y="9" font-size="5" font-weight="bold" fill="#c05000" text-anchor="middle">WIND FARM</text>
+                    <!-- Wind Farm Markers (Circular Layout) -->
+                    <g transform="translate(145, 30)">
+                        <circle cx="0" cy="0" r="4" fill="#c05000"/>
+                        <text x="0" y="8" font-size="4.5" font-weight="bold" fill="#c05000" text-anchor="middle">WTG 1</text>
+                    </g>
+                    <g transform="translate(120, 20)">
+                        <circle cx="0" cy="0" r="4" fill="#c05000"/>
+                        <text x="0" y="8" font-size="4.5" font-weight="bold" fill="#c05000" text-anchor="middle">WTG 2</text>
+                    </g>
+                    <g transform="translate(160, 55)">
+                        <circle cx="0" cy="0" r="4" fill="#c05000"/>
+                        <text x="0" y="8" font-size="4.5" font-weight="bold" fill="#c05000" text-anchor="middle">WTG 3</text>
                     </g>
                 </svg>
             </div>
 
-            <div style="font-size: 9px;">
-                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 3px; color: #3a3525;">NAV & OBSTRUCTION HAZARDS</div>
-                <div style="background: #c9bf9b; border: 1px solid #4a4532; border-radius: 3px; padding: 5px;">
-                    <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #b5ac8c; padding-bottom: 3px; margin-bottom: 3px;">
-                        <span><strong>RIG ALPHA NDB:</strong> (RGA)</span>
+            <div style="font-size: 8.5px;">
+                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px; color: #3a3525;">NAV & OBSTRUCTION HAZARDS</div>
+                <div style="background: #c9bf9b; border: 1px solid #4a4532; border-radius: 3px; padding: 4px;">
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #b5ac8c; padding-bottom: 2px; margin-bottom: 2px;">
+                        <span><strong>RIG ALPHA (RGA):</strong></span>
                         <span><strong>210.0 kHz</strong></span>
                     </div>
-                    <div style="display: flex; justify-content: space-between;">
-                        <span><strong>WIND FARM NDB:</strong> (WFM)</span>
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #b5ac8c; padding-bottom: 2px; margin-bottom: 2px;">
+                        <span><strong>WTG #1 HAZARD:</strong></span>
                         <span><strong>350.0 kHz</strong></span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #b5ac8c; padding-bottom: 2px; margin-bottom: 2px;">
+                        <span><strong>WTG #2 HAZARD:</strong></span>
+                        <span><strong>240.0 kHz</strong></span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span><strong>WTG #3 HAZARD:</strong></span>
+                        <span><strong>290.0 kHz</strong></span>
                     </div>
                 </div>
             </div>

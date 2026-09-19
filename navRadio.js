@@ -10,12 +10,22 @@ export class NavRadio {
         this.powered = true;
 
         const basePos = rigAlphaPosition || new THREE.Vector3(0, 0, 0);
-        const windFarmPos = basePos.clone().add(new THREE.Vector3(1200, 0, -1200));
 
-        // Station registry: easily add future locations here in the future
+        // Calculate exact world coordinates matching windFarm.js circular layout
+        const baseRadius = 750;
+        const radiusIncrement = 180;
+        const angleStep = (Math.PI * 2) / 3;
+
+        const wtg1Pos = new THREE.Vector3(Math.cos(0 * angleStep) * baseRadius, 0, Math.sin(0 * angleStep) * baseRadius).add(basePos);
+        const wtg2Pos = new THREE.Vector3(Math.cos(1 * angleStep) * (baseRadius + radiusIncrement), 0, Math.sin(1 * angleStep) * (baseRadius + radiusIncrement)).add(basePos);
+        const wtg3Pos = new THREE.Vector3(Math.cos(2 * angleStep) * (baseRadius + (radiusIncrement * 2)), 0, Math.sin(2 * angleStep) * (baseRadius + (radiusIncrement * 2))).add(basePos);
+
+        // Station registry linking exact frequencies to Main Base and each wind turbine
         this.stations = {
             210: { name: 'RIG ALPHA', position: basePos },
-            350: { name: 'WIND FARM', position: windFarmPos }
+            350: { name: 'WTG #1 (350 kHz)', position: wtg1Pos },
+            240: { name: 'WTG #2 (240 kHz)', position: wtg2Pos },
+            290: { name: 'WTG #3 (290 kHz)', position: wtg3Pos }
         };
 
         this.frequency = 210.0;
