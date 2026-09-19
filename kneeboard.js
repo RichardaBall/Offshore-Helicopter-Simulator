@@ -69,40 +69,58 @@ export class Kneeboard {
             overflow: hidden;
         `;
 
-        // Page 1: Controls Reference
+        // Page 1: Controls Reference (Original format + aligned notes)
         this.page1El = document.createElement('div');
         this.page1El.style.cssText = this.getPageStyle(0);
         this.page1El.innerHTML = `
             <div style="font-weight: bold; text-align: center; text-decoration: underline; font-size: 11px; margin-bottom: 6px; color: #3a3525; letter-spacing: 0.5px;">CONTROLS</div>
 
-            <div style="margin-bottom: 6px; font-size: 10px;">
+            <div style="margin-bottom: 5px; font-size: 9.5px;">
                 <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">1. SYSTEMS</div>
                 <div style="display: flex; justify-content: space-between;"><span>Battery Switch:</span><strong>[Q]</strong></div>
                 <div style="display: flex; justify-content: space-between;"><span>Fuel Pump Prime:</span><strong>[F]</strong></div>
                 <div style="display: flex; justify-content: space-between;"><span>Engine Ignition:</span><strong>[E]</strong></div>
             </div>
 
-            <div style="margin-bottom: 6px; font-size: 10px;">
+            <div style="margin-bottom: 5px; font-size: 9.5px;">
                 <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">2. FLIGHT CONTROLS</div>
                 <div style="display: flex; justify-content: space-between;"><span>Pitch / Roll / Yaw:</span><strong>Arrow Keys</strong></div>
                 <div style="display: flex; justify-content: space-between;"><span>Collective Up/Dn:</span><strong>Shift/Ctrl</strong></div>
                 <div style="display: flex; justify-content: space-between;"><span>Camera Zoom:</span><strong>Mouse Wheel</strong></div>
             </div>
 
-            <div style="margin-bottom: 6px; font-size: 10px;">
+            <div style="margin-bottom: 5px; font-size: 9.5px;">
                 <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">3. LIGHTING & GEAR</div>
                 <div style="display: flex; justify-content: space-between;"><span>Landing Gear:</span><strong>[G]</strong></div>
                 <div style="display: flex; justify-content: space-between;"><span>Landing Light:</span><strong>[L]</strong></div>
             </div>
 
-            <div style="font-size: 10px;">
+            <div style="margin-bottom: 5px; font-size: 9.5px;">
                 <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">4. FIREFIGHTING & UI</div>
                 <div style="display: flex; justify-content: space-between;"><span>Water Spray:</span><strong>Hold [Space]</strong></div>
                 <div style="display: flex; justify-content: space-between;"><span>Toggle Kneeboard:</span><strong>[K]</strong></div>
             </div>
+
+            <div style="font-size: 8.5px; border-top: 1px dashed #6b634b; padding-top: 3px; margin-top: 3px;">
+                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">IN-FLIGHT NOTES:</div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        Fuel Qty<br>
+                        <span style="font-size: 7.5px; color: #555;">(Tail Strobe)</span>
+                    </div>
+                    <div style="text-align: right;">
+                        <strong>White</strong> 50-100%<br>
+                        <strong>Amber</strong> 10-50%<br>
+                        <strong>Red</strong> &lt;10%
+                    </div>
+                </div>
+                <div style="margin-top: 5px; border-top: 1px dotted #b5ac8c; padding-top: 4px;">
+                    ADF: Small yellow arrow around rotor hub (visible only when station is tuned correctly).
+                </div>
+            </div>
         `;
 
-        // Page 2: Flight Checklist (Updated with combined refueling/water fill requirements)
+        // Page 2: Flight Checklist
         this.page2El = document.createElement('div');
         this.page2El.style.cssText = this.getPageStyle(1);
         this.page2El.innerHTML = `
@@ -182,7 +200,7 @@ export class Kneeboard {
             </div>
         `;
 
-        // Page 4: Aviation Chart & Nav Frequencies (Rig Alpha + All Wind Farm NDBs)
+        // Page 4: Aviation Chart & Nav Frequencies
         this.page4El = document.createElement('div');
         this.page4El.style.cssText = this.getPageStyle(3);
         this.page4El.innerHTML = `
