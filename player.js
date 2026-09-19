@@ -160,7 +160,7 @@ export class HelicopterPlayer {
         if (!gearAction) return;
 
         gearAction.paused = false;
-        gearAction.timeScale = this.isGearUp ? -1 : 1;
+        gearAction.timeScale = this.isGearUp ? -4 : 4;
         gearAction.setLoop(THREE.LoopOnce, 1);
         gearAction.clampWhenFinished = true;
         gearAction.play();

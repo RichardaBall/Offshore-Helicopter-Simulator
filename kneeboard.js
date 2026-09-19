@@ -102,14 +102,22 @@ export class Kneeboard {
             </div>
         `;
 
-        // Page 2: Flight Checklist
+        // Page 2: Flight Checklist (Updated with combined refueling/water fill requirements)
         this.page2El = document.createElement('div');
         this.page2El.style.cssText = this.getPageStyle(1);
         this.page2El.innerHTML = `
             <div style="font-weight: bold; text-align: center; text-decoration: underline; font-size: 11px; margin-bottom: 6px; color: #3a3525; letter-spacing: 0.5px;">CHECKLIST</div>
 
             <div style="margin-bottom: 6px; font-size: 10px;">
-                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">1. STARTUP</div>
+                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">1. PRE-FLIGHT / GROUND</div>
+                <div style="display: flex; justify-content: space-between;"><span>• Refuel & Water Fill:</span><strong>[Page 3]</strong></div>
+                <div style="display: flex; justify-content: space-between;"><span>• Fuel OFF:</span><strong>(F)</strong></div>
+                <div style="display: flex; justify-content: space-between;"><span>• Engine OFF:</span><strong>(E)</strong></div>
+                <div style="display: flex; justify-content: space-between;"><span>• Battery Switch OFF:</span><strong>(Q)</strong></div>
+            </div>
+
+            <div style="margin-bottom: 6px; font-size: 10px;">
+                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">2. STARTUP</div>
                 <div style="display: flex; justify-content: space-between;"><span>• Battery Switch:</span><strong>ON [Q]</strong></div>
                 <div style="display: flex; justify-content: space-between;"><span>• Fuel Pump Prime:</span><strong>ON [F]</strong></div>
                 <div style="display: flex; justify-content: space-between;"><span>• Engine Starter:</span><strong>ON [E]</strong></div>
@@ -117,17 +125,17 @@ export class Kneeboard {
             </div>
 
             <div style="margin-bottom: 6px; font-size: 10px;">
-                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">2. AFTER TAKEOFF</div>
+                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">3. AFTER TAKEOFF</div>
                 <div style="display: flex; justify-content: space-between;"><span>• Landing Gear:</span><strong>UP [G]</strong></div>
             </div>
 
             <div style="margin-bottom: 6px; font-size: 10px;">
-                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">3. BEFORE LANDING</div>
+                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">4. BEFORE LANDING</div>
                 <div style="display: flex; justify-content: space-between;"><span>• Landing Gear:</span><strong>DOWN [G]</strong></div>
             </div>
 
             <div style="font-size: 10px;">
-                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">4. SHUTDOWN</div>
+                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">5. SHUTDOWN</div>
                 <div style="display: flex; justify-content: space-between;"><span>• Fuel Pump:</span><strong>OFF [F]</strong></div>
                 <div style="display: flex; justify-content: space-between;"><span>• Engine Cutoff:</span><strong>OFF [E]</strong></div>
                 <div style="display: flex; justify-content: space-between;"><span>• Battery Switch:</span><strong>OFF [Q]</strong></div>
