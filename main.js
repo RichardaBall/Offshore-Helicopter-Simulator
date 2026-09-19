@@ -212,10 +212,9 @@ function animate() {
         liferaftManager.update(delta);
     }
 
-    if (waterSystem) {
-        const heliMesh = (helicopterPlayer && helicopterPlayer.model) ? helicopterPlayer.model : null;
+    if (waterSystem && helicopterPlayer) {
         const isDispensing = inputManager ? (inputManager.keys['Space'] || false) : false;
-        waterSystem.update(delta, heliMesh, isDispensing);
+        waterSystem.update(delta, helicopterPlayer, isDispensing);
     }
 
     if (helicopterPlayer && helicopterPlayer.model) {

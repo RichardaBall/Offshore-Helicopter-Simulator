@@ -96,8 +96,8 @@ export class Kneeboard {
             </div>
 
             <div style="font-size: 10px;">
-                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">4. NAVIGATION & UI</div>
-                <div style="display: flex; justify-content: space-between;"><span>NDB Radio Panel:</span><strong>[N]</strong></div>
+                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">4. FIREFIGHTING & UI</div>
+                <div style="display: flex; justify-content: space-between;"><span>Water Spray:</span><strong>Hold [Space]</strong></div>
                 <div style="display: flex; justify-content: space-between;"><span>Toggle Kneeboard:</span><strong>[K]</strong></div>
             </div>
         `;
@@ -134,13 +134,13 @@ export class Kneeboard {
             </div>
         `;
 
-        // Page 3: Fuel & Passenger Manifest
+        // Page 3: Fuel & Water Tank Manifest
         this.page3El = document.createElement('div');
         this.page3El.style.cssText = this.getPageStyle(2);
         this.page3El.innerHTML = `
             <div style="font-weight: bold; text-align: center; text-decoration: underline; font-size: 11px; margin-bottom: 6px; color: #3a3525; letter-spacing: 0.5px;">MANIFEST</div>
 
-            <div style="margin-bottom: 6px; font-size: 10px;">
+            <div style="margin-bottom: 8px; font-size: 10px;">
                 <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">REFUEL MANIFEST</div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
                     <span>Fuel Load:</span><span><strong id="kb-fuel-val">1000</strong> kg</span>
@@ -148,34 +148,29 @@ export class Kneeboard {
                 <input type="range" id="kb-fuel-slider" min="0" max="1500" value="1000" step="10" style="width: 100%; accent-color: #4a4532; cursor: pointer;">
             </div>
 
-            <div style="margin-bottom: 6px; font-size: 10px;">
-                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">PASSENGER MANIFEST (Max 8)</div>
+            <div style="margin-bottom: 8px; font-size: 10px;">
+                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">WATER TANK MANIFEST (Max 1500 kg)</div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
-                    <span>Passengers:</span><span><strong id="kb-pax-val">0</strong> (<strong id="kb-pax-wt">0</strong> kg)</span>
+                    <span>Water Load:</span><span><strong id="kb-water-val">1000</strong> kg</span>
                 </div>
-                <input type="range" id="kb-pax-slider" min="0" max="8" value="0" step="1" style="width: 100%; accent-color: #4a4532; cursor: pointer;">
+                <input type="range" id="kb-water-slider" min="0" max="1500" value="1000" step="10" style="width: 100%; accent-color: #2675b4; cursor: pointer;">
             </div>
 
-            <div style="margin-bottom: 6px; font-size: 10px;">
-                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">CABIN SEATING PLAN</div>
-                <div style="background: #c9bf9b; border: 2px solid #4a4532; border-radius: 4px; padding: 5px; text-align: center;">
-                    <div style="font-size: 7px; color: #555; margin-bottom: 2px; font-weight: bold;">[ COCKPIT ]</div>
-                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px;">
-                        <div class="kb-seat" id="seat-0" style="background:#b5ac8c; border:1px solid #4a4532; padding:2px; font-size:8px; border-radius:2px; text-align:center;">1</div>
-                        <div class="kb-seat" id="seat-1" style="background:#b5ac8c; border:1px solid #4a4532; padding:2px; font-size:8px; border-radius:2px; text-align:center;">2</div>
-                        <div class="kb-seat" id="seat-2" style="background:#b5ac8c; border:1px solid #4a4532; padding:2px; font-size:8px; border-radius:2px; text-align:center;">3</div>
-                        <div class="kb-seat" id="seat-3" style="background:#b5ac8c; border:1px solid #4a4532; padding:2px; font-size:8px; border-radius:2px; text-align:center;">4</div>
-                        <div class="kb-seat" id="seat-4" style="background:#b5ac8c; border:1px solid #4a4532; padding:2px; font-size:8px; border-radius:2px; text-align:center;">5</div>
-                        <div class="kb-seat" id="seat-5" style="background:#b5ac8c; border:1px solid #4a4532; padding:2px; font-size:8px; border-radius:2px; text-align:center;">6</div>
-                        <div class="kb-seat" id="seat-6" style="background:#b5ac8c; border:1px solid #4a4532; padding:2px; font-size:8px; border-radius:2px; text-align:center;">7</div>
-                        <div class="kb-seat" id="seat-7" style="background:#b5ac8c; border:1px solid #4a4532; padding:2px; font-size:8px; border-radius:2px; text-align:center;">8</div>
+            <div style="margin-bottom: 8px; font-size: 10px;">
+                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">WATER TANK STATUS</div>
+                <div style="background: #c9bf9b; border: 2px solid #4a4532; border-radius: 4px; padding: 6px; text-align: center;">
+                    <div style="font-size: 9px; font-weight: bold; margin-bottom: 4px; color: #1c4e80;">[ FIREFIGHTING TANK ]</div>
+                    <div style="width: 100%; background: #b0a682; height: 16px; border: 1px solid #4a4532; border-radius: 3px; overflow: hidden; position: relative;">
+                        <div id="kb-water-bar" style="width: 66.6%; height: 100%; background: linear-gradient(90deg, #38bdf8, #0284c7); transition: width 0.1s ease-out;"></div>
+                        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: bold; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.8);">
+                            <span id="kb-water-pct">67</span>%
+                        </div>
                     </div>
-                    <div style="font-size: 7px; color: #555; margin-top: 2px; font-weight: bold;">[ TAIL ]</div>
                 </div>
             </div>
 
-            <div style="font-size: 10px; font-weight: bold; border-top: 1px dashed #6b634b; padding-top: 3px; display: flex; justify-content: space-between;">
-                <span>Total Gross Mass:</span><span><strong id="kb-total-mass">5600</strong> kg</span>
+            <div style="font-size: 10px; font-weight: bold; border-top: 1px dashed #6b634b; padding-top: 4px; display: flex; justify-content: space-between;">
+                <span>Total Gross Mass:</span><span><strong id="kb-total-mass">6600</strong> kg</span>
             </div>
         `;
 
@@ -278,7 +273,6 @@ export class Kneeboard {
 
         const styleTag = document.createElement('style');
         styleTag.innerHTML = `
-            .seat-occupied { background: #2e5e2e !important; color: #fff !important; font-weight: bold; }
             input[type=range]:disabled { opacity: 0.5; cursor: not-allowed !important; }
         `;
         document.head.appendChild(styleTag);
@@ -299,17 +293,15 @@ export class Kneeboard {
             });
         }
 
-        const paxSlider = this.container.querySelector('#kb-pax-slider');
-        if (paxSlider) {
-            paxSlider.addEventListener('input', (e) => {
+        const waterSlider = this.container.querySelector('#kb-water-slider');
+        if (waterSlider) {
+            waterSlider.addEventListener('input', (e) => {
                 if (this.playerRef && this.isConfigAllowed(this.playerRef)) {
-                    const val = parseInt(e.target.value);
-                    this.playerRef.passengerCount = val;
-                    const paxValEl = document.getElementById('kb-pax-val');
-                    const paxWtEl = document.getElementById('kb-pax-wt');
-                    if (paxValEl) paxValEl.innerText = val;
-                    if (paxWtEl) paxWtEl.innerText = val * 85;
-                    this.updateSeatVisuals(val);
+                    const val = parseFloat(e.target.value);
+                    this.playerRef.waterTankKg = val;
+                    const waterValEl = document.getElementById('kb-water-val');
+                    if (waterValEl) waterValEl.innerText = val;
+                    this.updateWaterBarVisuals(val);
                     this.updateManifestDisplay();
                 }
             });
@@ -390,26 +382,25 @@ export class Kneeboard {
         return qOff && fOff && eOff;
     }
 
-    updateSeatVisuals(count) {
-        for (let i = 0; i < 8; i++) {
-            const seat = document.getElementById(`seat-${i}`);
-            if (seat) {
-                if (i < count) seat.classList.add('seat-occupied');
-                else seat.classList.remove('seat-occupied');
-            }
-        }
+    updateWaterBarVisuals(waterKg) {
+        const maxWater = 1500;
+        const pct = Math.max(0, Math.min(100, Math.round((waterKg / maxWater) * 100)));
+        const waterBar = document.getElementById('kb-water-bar');
+        const waterPct = document.getElementById('kb-water-pct');
+        if (waterBar) waterBar.style.width = `${pct}%`;
+        if (waterPct) waterPct.innerText = pct;
     }
 
     updateManifestDisplay() {
         const fuelSlider = document.getElementById('kb-fuel-slider');
-        const paxSlider = document.getElementById('kb-pax-slider');
+        const waterSlider = document.getElementById('kb-water-slider');
         const fuelVal = fuelSlider ? parseFloat(fuelSlider.value) : 1000;
-        const paxVal = paxSlider ? parseInt(paxSlider.value) : 0;
+        const waterVal = waterSlider ? parseFloat(waterSlider.value) : 1000;
 
         const totalMassEl = document.getElementById('kb-total-mass');
         if (totalMassEl) {
             const emptyWeight = 4600;
-            const total = emptyWeight + fuelVal + (paxVal * 85);
+            const total = emptyWeight + fuelVal + waterVal;
             totalMassEl.innerText = total;
         }
     }
@@ -421,10 +412,10 @@ export class Kneeboard {
         if (player) {
             const allowed = this.isConfigAllowed(player);
             const fuelSlider = document.getElementById('kb-fuel-slider');
-            const paxSlider = document.getElementById('kb-pax-slider');
+            const waterSlider = document.getElementById('kb-water-slider');
 
             if (fuelSlider) fuelSlider.disabled = !allowed;
-            if (paxSlider) paxSlider.disabled = !allowed;
+            if (waterSlider) waterSlider.disabled = !allowed;
 
             if (allowed && fuelSlider && document.activeElement !== fuelSlider && player.fuelKg !== undefined) {
                 fuelSlider.value = player.fuelKg;
@@ -432,13 +423,11 @@ export class Kneeboard {
                 if (fuelVal) fuelVal.innerText = Math.round(player.fuelKg);
             }
 
-            if (paxSlider && document.activeElement !== paxSlider && player.passengerCount !== undefined) {
-                paxSlider.value = player.passengerCount;
-                const paxVal = document.getElementById('kb-pax-val');
-                const paxWt = document.getElementById('kb-pax-wt');
-                if (paxVal) paxVal.innerText = player.passengerCount;
-                if (paxWt) paxWt.innerText = player.passengerCount * 85;
-                this.updateSeatVisuals(player.passengerCount);
+            if (allowed && waterSlider && document.activeElement !== waterSlider && player.waterTankKg !== undefined) {
+                waterSlider.value = player.waterTankKg;
+                const waterVal = document.getElementById('kb-water-val');
+                if (waterVal) waterVal.innerText = Math.round(player.waterTankKg);
+                this.updateWaterBarVisuals(player.waterTankKg);
             }
 
             this.updateManifestDisplay();

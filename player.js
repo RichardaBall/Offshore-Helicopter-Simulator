@@ -68,8 +68,8 @@ export class HelicopterPlayer {
         this.dryWeightKg = 4600;       
         this.fuelKg = 1000;            
         this.maxFuelKg = 1000;
-        this.passengerCount = 6;      
-        this.passengerAvgKg = 85;     
+        this.waterTankKg = 1000;      // Firefighting water tank load
+        this.maxWaterTankKg = 1500;   // Maximum water tank capacity
         this.baselineMassKg = 6200; 
 
         this.maxFuelBurnRatePerSec = 1000.0 / 300.0; 
@@ -93,7 +93,7 @@ export class HelicopterPlayer {
     }
 
     getTotalMass() {
-        return this.dryWeightKg + this.fuelKg + (this.passengerCount * this.passengerAvgKg);
+        return this.dryWeightKg + this.fuelKg + this.waterTankKg;
     }
 
     getCurrentGroundLevel() {

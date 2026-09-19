@@ -1,103 +1,50 @@
 import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
-import { GLTFLoader } from 'https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
 
-export class LifeRaftManager {
+export class LiferaftManager {
     constructor(scene) {
         this.scene = scene;
-        this.liferaftGroup = null;
+        this.raftMesh = null;
         this.isDeployed = false;
-        this.splashRing = null;
-        this.splashTimer = 0;
-        this.timeElapsed = 0;
-        this.loader = new GLTFLoader();
-    }
 
-    createProceduralLiferaft(parentGroup) {
-        const tubeGeo = new THREE.TorusGeometry(1.5, 0.35, 16, 32);
-        const tubeMat = new THREE.MeshStandardMaterial({ color: 0xff4500, roughness: 0.4 });
-        const tube = new THREE.Mesh(tubeGeo, tubeMat);
-        tube.rotation.x = Math.PI / 2;
-        tube.position.y = 0.2;
-        parentGroup.add(tube);
+        // Create a simple life raft model (orange circular ring with a grey center floor)
+        const raftGroup = new THREE.Group();
 
-        const floorGeo = new THREE.CylinderGeometry(1.3, 1.3, 0.1, 16);
-        const floorMat = new THREE.MeshStandardMaterial({ color: 0x224488, roughness: 0.6 });
+        const ringGeo = new THREE.TorusGeometry(2.5, 0.4, 12, 24);
+        const ringMat = new THREE.MeshStandardMaterial({ color: 0xff4500, roughness: 0.4 }); // High-visibility orange
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.rotation.x = Math.PI / 2;
+        ring.position.y = 0.1;
+        raftGroup.add(ring);
+
+        const floorGeo = new THREE.CylinderGeometry(2.2, 2.2, 0.1, 24);
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.8 });
         const floor = new THREE.Mesh(floorGeo, floorMat);
-        floor.position.y = 0.1;
-        parentGroup.add(floor);
+        floor.position.y = 0.05;
+        raftGroup.add(floor);
 
-        const canopyGeo = new THREE.ConeGeometry(1.3, 1.0, 16, 1, true);
-        const canopyMat = new THREE.MeshStandardMaterial({ color: 0xffaa00, roughness: 0.5, side: THREE.DoubleSide });
-        const canopy = new THREE.Mesh(canopyGeo, canopyMat);
-        canopy.position.y = 0.7;
-        canopy.rotation.y = Math.PI / 4;
-        parentGroup.add(canopy);
+        this.raftMesh = raftGroup;
+        this.raftMesh.visible = false;
+        this.scene.add(this.raftMesh);
     }
 
-    deploy(position) {
+    deploy(crashPosition) {
         if (this.isDeployed) return;
         this.isDeployed = true;
 
-        this.liferaftGroup = new THREE.Group();
-        this.liferaftGroup.position.set(position.x, 0.1, position.z);
-        this.scene.add(this.liferaftGroup);
-
-        this.loader.load(
-            'liferaft.glb',
-            (gltf) => {
-                const model = gltf.scene;
-                model.scale.set(1.0, 1.0, 1.0);
-                this.liferaftGroup.add(model);
-                console.log("AW189: Liferaft GLB loaded successfully.");
-            },
-            undefined,
-            (error) => {
-                console.warn("AW189: liferaft.glb missing. Using procedural fallback.");
-                this.createProceduralLiferaft(this.liferaftGroup);
-            }
-        );
-
-        const splashGeo = new THREE.RingGeometry(0.1, 0.5, 32);
-        const splashMat = new THREE.MeshBasicMaterial({
-            color: 0xffffff,
-            transparent: true,
-            opacity: 0.8,
-            side: THREE.DoubleSide
-        });
-        this.splashRing = new THREE.Mesh(splashGeo, splashMat);
-        this.splashRing.rotation.x = -Math.PI / 2;
-        this.splashRing.position.set(position.x, 0.2, position.z);
-        this.scene.add(this.splashRing);
-
-        this.splashTimer = 1.5;
-        this.timeElapsed = 0;
-        console.log("AW189: Liferaft deployed at sea position.");
+        // Position the life raft right at the sea crash coordinates (floating on water level y = 0.0)
+        this.raftMesh.position.set(crashPosition.x, 0.0, crashPosition.z);
+        this.raftMesh.visible = true;
+        
+        console.log("Liferaft deployed successfully at:", crashPosition);
     }
 
     update(delta) {
-        if (!this.isDeployed) return;
-        this.timeElapsed += delta;
+        if (!this.isDeployed || !this.raftMesh) return;
 
-        if (this.splashRing && this.splashTimer > 0) {
-            this.splashTimer -= delta;
-            const scale = 1.0 + (1.5 - this.splashTimer) * 8.0;
-            this.splashRing.scale.set(scale, scale, scale);
-            if (this.splashRing.material) {
-                this.splashRing.material.opacity = Math.max(0, this.splashTimer / 1.5);
-            }
-            if (this.splashTimer <= 0) {
-                this.scene.remove(this.splashRing);
-                this.splashRing.geometry.dispose();
-                this.splashRing.material.dispose();
-                this.splashRing = null;
-            }
-        }
-
-        if (this.liferaftGroup) {
-            const bobTime = this.timeElapsed * 2.0;
-            this.liferaftGroup.position.y = 0.1 + Math.sin(bobTime) * 0.15;
-            this.liferaftGroup.rotation.z = Math.sin(bobTime * 0.7) * 0.05;
-            this.liferaftGroup.rotation.x = Math.cos(bobTime * 0.5) * 0.05;
-        }
+        // Add a gentle bobbing motion on the water waves
+        const time = Date.now() * 0.002;
+        this.raftMesh.position.y = Math.sin(time) * 0.15;
+        this.raftMesh.rotation.z = Math.cos(time * 0.7) * 0.03;
+        this.raftMesh.rotation.x = Math.sin(time * 0.5) * 0.03;
     }
 }

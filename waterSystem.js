@@ -54,9 +54,10 @@ export class WaterSystem {
         this.spawnIndex = 0;
     }
 
-    update(delta, helicopterMesh, isDispensing) {
-        if (!helicopterMesh) return;
+    update(delta, helicopterPlayer, isDispensing) {
+        if (!helicopterPlayer || !helicopterPlayer.model) return;
 
+        const helicopterMesh = helicopterPlayer.model;
         const positions = this.particleGeometry.attributes.position.array;
         
         const heliWorldPos = new THREE.Vector3();
@@ -93,8 +94,14 @@ export class WaterSystem {
             }
         }
 
-        // Continuously dump a heavy, high-volume stream while spacebar is held
-        if (isDispensing) {
+        // Continuously dump water while spacebar is held and water tank has supply > 0
+        let actuallyDispensing = false;
+        if (isDispensing && helicopterPlayer.waterTankKg > 0) {
+            const dischargeRate = 400.0; // kg per second dispensed
+            const dropAmount = dischargeRate * delta;
+            helicopterPlayer.waterTankKg = Math.max(0, helicopterPlayer.waterTankKg - dropAmount);
+
+            actuallyDispensing = true;
             const spawnBatch = 45; // High emission density matching a major water release tank
             for (let b = 0; b < spawnBatch; b++) {
                 const i = this.spawnIndex;
@@ -107,17 +114,18 @@ export class WaterSystem {
                 positions[idx + 1] = spawnCenter.y;
                 positions[idx + 2] = spawnCenter.z + Math.sin(angle) * radius;
 
-                // Heavy downward blast combined with reverse aerodynamic slipstream vector (swept backward like in the reference photo)
+                // Heavy downward blast combined with reverse aerodynamic slipstream vector
                 this.velocities[idx] = (Math.random() - 0.5) * 3.0 - (heliForward.x * 6.0);
-                this.velocities[idx + 1] = -12.0 - Math.random() * 6.0; // Rapid downward water dump
+                this.velocities[idx + 1] = -12.0 - Math.random() * 6.0; 
                 this.velocities[idx + 2] = (Math.random() - 0.5) * 3.0 - (heliForward.z * 6.0);
 
-                this.lifetimes[i] = 4.0; // Long lifetime allowing the massive plume to billow down to the surface
+                this.lifetimes[i] = 4.0; 
 
                 this.spawnIndex = (this.spawnIndex + 1) % this.particlesCount;
             }
         }
 
         this.particleGeometry.attributes.position.needsUpdate = true;
+        return actuallyDispensing;
     }
 }
