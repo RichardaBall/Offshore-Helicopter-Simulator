@@ -1,50 +1,52 @@
 import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+import { GLTFLoader } from 'https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
 
 export class LiferaftManager {
     constructor(scene) {
         this.scene = scene;
-        this.raftMesh = null;
+        this.raftGroup = new THREE.Group();
         this.isDeployed = false;
+        this.raftGroup.visible = false;
+        this.scene.add(this.raftGroup);
 
-        // Create a simple life raft model (orange circular ring with a grey center floor)
-        const raftGroup = new THREE.Group();
-
-        const ringGeo = new THREE.TorusGeometry(2.5, 0.4, 12, 24);
-        const ringMat = new THREE.MeshStandardMaterial({ color: 0xff4500, roughness: 0.4 }); // High-visibility orange
-        const ring = new THREE.Mesh(ringGeo, ringMat);
-        ring.rotation.x = Math.PI / 2;
-        ring.position.y = 0.1;
-        raftGroup.add(ring);
-
-        const floorGeo = new THREE.CylinderGeometry(2.2, 2.2, 0.1, 24);
-        const floorMat = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.8 });
-        const floor = new THREE.Mesh(floorGeo, floorMat);
-        floor.position.y = 0.05;
-        raftGroup.add(floor);
-
-        this.raftMesh = raftGroup;
-        this.raftMesh.visible = false;
-        this.scene.add(this.raftMesh);
+        // Load the custom liferaft.glb model
+        const loader = new GLTFLoader();
+        loader.load(
+            './liferaft.glb', // Adjust path if your assets folder is structured differently
+            (gltf) => {
+                const model = gltf.scene;
+                // Optional: Adjust scale or centering if needed
+                model.scale.set(1, 1, 1);
+                this.raftGroup.add(model);
+                console.log("liferaft.glb loaded successfully.");
+            },
+            (xhr) => {
+                // Loading progress optional
+            },
+            (error) => {
+                console.error("An error occurred while loading liferaft.glb:", error);
+            }
+        );
     }
 
     deploy(crashPosition) {
         if (this.isDeployed) return;
         this.isDeployed = true;
 
-        // Position the life raft right at the sea crash coordinates (floating on water level y = 0.0)
-        this.raftMesh.position.set(crashPosition.x, 0.0, crashPosition.z);
-        this.raftMesh.visible = true;
+        // Position the life raft model at the sea crash coordinates (floating on water level y = 0.0)
+        this.raftGroup.position.set(crashPosition.x, 0.0, crashPosition.z);
+        this.raftGroup.visible = true;
         
-        console.log("Liferaft deployed successfully at:", crashPosition);
+        console.log("Custom liferaft deployed successfully at:", crashPosition);
     }
 
     update(delta) {
-        if (!this.isDeployed || !this.raftMesh) return;
+        if (!this.isDeployed || !this.raftGroup) return;
 
         // Add a gentle bobbing motion on the water waves
         const time = Date.now() * 0.002;
-        this.raftMesh.position.y = Math.sin(time) * 0.15;
-        this.raftMesh.rotation.z = Math.cos(time * 0.7) * 0.03;
-        this.raftMesh.rotation.x = Math.sin(time * 0.5) * 0.03;
+        this.raftGroup.position.y = Math.sin(time) * 0.15;
+        this.raftGroup.rotation.z = Math.cos(time * 0.7) * 0.03;
+        this.raftGroup.rotation.x = Math.sin(time * 0.5) * 0.03;
     }
 }
