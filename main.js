@@ -13,6 +13,7 @@ import { MainBase } from './mainbase.js';
 import { LiferaftManager } from './liferaft.js';
 import { WaterSystem } from './waterSystem.js';
 import { SirenSystem } from './sirenSystem.js';
+import { RotorWashSystem } from './rotorWashSystem.js';
 
 const { scene, camera, renderer, water, sunLight, ambientLight } = setupScene();
 const weatherSystem = new WeatherSystem();
@@ -22,6 +23,7 @@ const kneeboard = new Kneeboard();
 const windFarm = new WindFarm(scene);
 const liferaftManager = new LiferaftManager(scene);
 const waterSystem = new WaterSystem(scene);
+const rotorWashSystem = new RotorWashSystem(scene);
 const sirenSystem = new SirenSystem(scene, null);
 
 const clock = new THREE.Clock();
@@ -221,6 +223,10 @@ function animate() {
     if (waterSystem && helicopterPlayer) {
         const isDispensing = inputManager ? (inputManager.keys['Space'] || false) : false;
         waterSystem.update(delta, helicopterPlayer, isDispensing);
+    }
+
+    if (rotorWashSystem && helicopterPlayer) {
+        rotorWashSystem.update(delta, helicopterPlayer);
     }
 
     if (helicopterPlayer && helicopterPlayer.model) {
