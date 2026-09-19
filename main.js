@@ -11,6 +11,7 @@ import { Kneeboard } from './kneeboard.js';
 import { WindFarm } from './windFarm.js';
 import { MainBase } from './mainbase.js';
 import { LiferaftManager } from './liferaft.js';
+import { WaterSystem } from './waterSystem.js';
 
 const { scene, camera, renderer, water, sunLight, ambientLight } = setupScene();
 const weatherSystem = new WeatherSystem();
@@ -19,6 +20,7 @@ const soundManager = new SoundManager();
 const kneeboard = new Kneeboard();
 const windFarm = new WindFarm(scene);
 const liferaftManager = new LiferaftManager(scene);
+const waterSystem = new WaterSystem(scene);
 
 const clock = new THREE.Clock();
 
@@ -208,6 +210,12 @@ function animate() {
 
     if (liferaftManager) {
         liferaftManager.update(delta);
+    }
+
+    if (waterSystem) {
+        const heliMesh = (helicopterPlayer && helicopterPlayer.model) ? helicopterPlayer.model : null;
+        const isDispensing = inputManager ? (inputManager.keys['Space'] || false) : false;
+        waterSystem.update(delta, heliMesh, isDispensing);
     }
 
     if (helicopterPlayer && helicopterPlayer.model) {
