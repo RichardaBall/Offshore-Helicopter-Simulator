@@ -58,8 +58,12 @@ export class WindFarm {
                 turbineGroup.position.set(xPos, yPos, zPos);
                 turbineGroup.scale.set(0.5, 0.5, 0.5);
                 
-                // Rotate turbine slightly to face the center origin or outward naturally
-                turbineGroup.rotation.y = -currentAngle + Math.PI / 2;
+                // Explicitly calculate facing angle toward origin (0, 0, 0)
+                const targetX = 0;
+                const targetZ = 0;
+                const dx = targetX - xPos;
+                const dz = targetZ - zPos;
+                turbineGroup.rotation.y = Math.atan2(dx, dz);
 
                 this.scene.add(turbineGroup);
 
@@ -124,7 +128,7 @@ export class WindFarm {
                 this.fireSpawnTriggered = true;
             }
 
-            console.log("Successfully spawned 3 circular wind turbines at increasing distances from the main base.");
+            console.log("Successfully spawned 3 circular wind turbines using precise atan2 origin alignment facing inward.");
 
         }, undefined, (error) => {
             console.error("WTG model failed to load for wind farm:", error);
