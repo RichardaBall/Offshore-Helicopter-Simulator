@@ -6,6 +6,9 @@ export class WindFarm {
         this.scene = scene;
         this.turbines = [];
 
+        // Expose globally for UI and kneeboard integration
+        window.windFarm = this;
+
         // Fire & Extinguishing state
         this.activeFireIndex = -1;
         this.cooldownTimer = 0.0; 
@@ -239,6 +242,9 @@ export class WindFarm {
     spawnSpecificFire(index) {
         this.activeFireIndex = index;
         this.currentWaterHits = 0;
+        if (this.scene) {
+            this.scene.userData.activeFireIndex = index;
+        }
 
         if (this.fireParticleSystem) this.fireParticleSystem.visible = true;
         if (this.smokeParticleSystem) this.smokeParticleSystem.visible = true;
@@ -250,16 +256,23 @@ export class WindFarm {
     extinguishFire() {
         console.log(`[WTG FIRE] Fire on turbine #${this.activeFireIndex + 1} successfully extinguished!`);
         this.activeFireIndex = -1;
+        if (this.scene) {
+            this.scene.userData.activeFireIndex = -1;
+        }
         if (this.fireParticleSystem) this.fireParticleSystem.visible = false;
         if (this.smokeParticleSystem) this.smokeParticleSystem.visible = false;
 
-        // Set cooldown between 1 and 5 minutes (60 to 300 seconds)
-        this.cooldownTimer = Math.random() * 240 + 60;
+        // Set cooldown between 1 and 3 minutes (60 to 180 seconds)
+        this.cooldownTimer = Math.random() * 120 + 60;
         console.log(`[WTG FIRE] Next fire will spawn in ${(this.cooldownTimer / 60).toFixed(1)} minutes.`);
     }
 
     update(delta, helicopterPosition, waterSystem) {
         const cullDistanceSq = 500.0 * 500.0;
+
+        if (this.scene) {
+            this.scene.userData.activeFireIndex = this.activeFireIndex;
+        }
 
         // If no active fire, count down the timer to spawn the next random fire
         if (this.activeFireIndex === -1 && this.turbines.length > 0) {

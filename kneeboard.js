@@ -3,10 +3,15 @@ export class Kneeboard {
         this.visible = true; // Open by default at the start of the game
         this.playerRef = null;
         this.navRadioRef = null;
+        this.windFarmRef = null;
         this.currentPage = 0;
         this.totalPages = 4;
         this.createElement();
         this.initListeners();
+    }
+
+    setWindFarmRef(windFarm) {
+        this.windFarmRef = windFarm;
     }
 
     createElement() {
@@ -16,7 +21,9 @@ export class Kneeboard {
             position: absolute;
             bottom: 30px;
             left: 30px;
-            width: 270px;
+            width: 324px; /* Scaled up by 20% from 270px */
+            transform: scale(1.2);
+            transform-origin: bottom left;
             background: #d8d0b0;
             border: 4px solid #4a4532;
             border-radius: 8px;
@@ -65,7 +72,7 @@ export class Kneeboard {
         this.pagesWrapper = document.createElement('div');
         this.pagesWrapper.style.cssText = `
             position: relative;
-            min-height: 290px;
+            min-height: 350px;
             overflow: hidden;
         `;
 
@@ -120,7 +127,7 @@ export class Kneeboard {
             </div>
         `;
 
-        // Page 2: Flight Checklist (Updated with Landing light AS REQ)
+        // Page 2: Flight Checklist
         this.page2El = document.createElement('div');
         this.page2El.style.cssText = this.getPageStyle(1);
         this.page2El.innerHTML = `
@@ -207,64 +214,64 @@ export class Kneeboard {
         this.page4El.innerHTML = `
             <div style="font-weight: bold; text-align: center; text-decoration: underline; font-size: 11px; margin-bottom: 5px; color: #3a3525; letter-spacing: 0.5px;">AVIATION CHART</div>
 
-            <div style="position: relative; background: #cebfa0; border: 2px solid #4a4532; border-radius: 4px; padding: 3px; text-align: center; height: 105px; box-sizing: border-box; margin-bottom: 5px;">
+            <div style="position: relative; background: #cebfa0; border: 2px solid #4a4532; border-radius: 4px; padding: 3px; text-align: center; height: 185px; box-sizing: border-box; margin-bottom: 5px;">
                 <!-- Grid & Map SVG -->
-                <svg width="100%" height="100%" viewBox="0 0 200 100" style="display: block;">
+                <svg width="100%" height="100%" viewBox="0 0 200 180" style="display: block;">
                     <!-- Grid Lines -->
-                    <line x1="50" y1="0" x2="50" y2="100" stroke="#b8a882" stroke-dasharray="2,2" stroke-width="1"/>
-                    <line x1="100" y1="0" x2="100" y2="100" stroke="#a3936e" stroke-width="1.5"/>
-                    <line x1="150" y1="0" x2="150" y2="100" stroke="#b8a882" stroke-dasharray="2,2" stroke-width="1"/>
+                    <line x1="50" y1="0" x2="50" y2="180" stroke="#b8a882" stroke-dasharray="2,2" stroke-width="1"/>
+                    <line x1="100" y1="0" x2="100" y2="180" stroke="#a3936e" stroke-width="1.5"/>
+                    <line x1="150" y1="0" x2="150" y2="180" stroke="#b8a882" stroke-dasharray="2,2" stroke-width="1"/>
                     
-                    <line x1="0" y1="25" x2="200" y2="25" stroke="#b8a882" stroke-dasharray="2,2" stroke-width="1"/>
-                    <line x1="0" y1="50" x2="200" y2="50" stroke="#a3936e" stroke-width="1.5"/>
-                    <line x1="0" y1="75" x2="200" y2="75" stroke="#b8a882" stroke-dasharray="2,2" stroke-width="1"/>
+                    <line x1="0" y1="45" x2="200" y2="45" stroke="#b8a882" stroke-dasharray="2,2" stroke-width="1"/>
+                    <line x1="0" y1="90" x2="200" y2="90" stroke="#a3936e" stroke-width="1.5"/>
+                    <line x1="0" y1="135" x2="200" y2="135" stroke="#b8a882" stroke-dasharray="2,2" stroke-width="1"/>
 
                     <!-- Compass / North Arrow -->
-                    <g transform="translate(180, 15)">
+                    <g transform="translate(180, 20)">
                         <polygon points="0,-8 3,5 0,2 -3,5" fill="#4a4532"/>
                         <text x="0" y="-10" font-size="6" font-weight="bold" fill="#4a4532" text-anchor="middle">N</text>
                     </g>
 
                     <!-- Oil Rig Alpha Marker (Center) -->
-                    <g transform="translate(100, 50)">
-                        <circle cx="0" cy="0" r="7" fill="none" stroke="#8b0000" stroke-width="1.5" stroke-dasharray="3,2"/>
+                    <g transform="translate(100, 90)">
+                        <circle cx="0" cy="0" r="8" fill="none" stroke="#8b0000" stroke-width="1.5" stroke-dasharray="3,2"/>
                         <rect x="-3" y="-3" width="6" height="6" fill="#4a4532" rx="1"/>
-                        <text x="0" y="-10" font-size="6" font-weight="bold" fill="#8b0000" text-anchor="middle">RIG ALPHA</text>
+                        <text x="0" y="-12" font-size="6" font-weight="bold" fill="#8b0000" text-anchor="middle">RIG ALPHA</text>
                     </g>
 
-                    <!-- Wind Farm Markers (Circular Layout) -->
-                    <g transform="translate(145, 30)">
-                        <circle cx="0" cy="0" r="4" fill="#c05000"/>
-                        <text x="0" y="8" font-size="4.5" font-weight="bold" fill="#c05000" text-anchor="middle">WTG 1</text>
+                    <!-- Wind Farm Markers (Alpha, Bravo, Charlie) with dynamic fire status -->
+                    <g transform="translate(145, 55)">
+                        <circle id="chart-wtg-circle-0" cx="0" cy="0" r="4.5" fill="#222222"/>
+                        <text id="chart-wtg-text-0" x="0" y="10" font-size="5" font-weight="bold" fill="#222222" text-anchor="middle">WTG A</text>
                     </g>
-                    <g transform="translate(120, 20)">
-                        <circle cx="0" cy="0" r="4" fill="#c05000"/>
-                        <text x="0" y="8" font-size="4.5" font-weight="bold" fill="#c05000" text-anchor="middle">WTG 2</text>
+                    <g transform="translate(120, 35)">
+                        <circle id="chart-wtg-circle-1" cx="0" cy="0" r="4.5" fill="#222222"/>
+                        <text id="chart-wtg-text-1" x="0" y="10" font-size="5" font-weight="bold" fill="#222222" text-anchor="middle">WTG B</text>
                     </g>
-                    <g transform="translate(160, 55)">
-                        <circle cx="0" cy="0" r="4" fill="#c05000"/>
-                        <text x="0" y="8" font-size="4.5" font-weight="bold" fill="#c05000" text-anchor="middle">WTG 3</text>
+                    <g transform="translate(160, 105)">
+                        <circle id="chart-wtg-circle-2" cx="0" cy="0" r="4.5" fill="#222222"/>
+                        <text id="chart-wtg-text-2" x="0" y="10" font-size="5" font-weight="bold" fill="#222222" text-anchor="middle">WTG C</text>
                     </g>
                 </svg>
             </div>
 
-            <div style="font-size: 8.5px;">
-                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px; color: #3a3525;">NAV & OBSTRUCTION HAZARDS</div>
-                <div style="background: #c9bf9b; border: 1px solid #4a4532; border-radius: 3px; padding: 4px;">
-                    <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #b5ac8c; padding-bottom: 2px; margin-bottom: 2px;">
+            <div style="font-size: 8px;">
+                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px; color: #3a3525;">NAV & OBSTRUCTION FREQUENCIES</div>
+                <div style="background: #c9bf9b; border: 1px solid #4a4532; border-radius: 3px; padding: 3px 5px;">
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #b5ac8c; padding-bottom: 1px; margin-bottom: 1px;">
                         <span><strong>RIG ALPHA (RGA):</strong></span>
                         <span><strong>210.0 kHz</strong></span>
                     </div>
-                    <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #b5ac8c; padding-bottom: 2px; margin-bottom: 2px;">
-                        <span><strong>WTG #1 HAZARD:</strong></span>
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #b5ac8c; padding-bottom: 1px; margin-bottom: 1px;">
+                        <span><strong>WTG A:</strong></span>
                         <span><strong>350.0 kHz</strong></span>
                     </div>
-                    <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #b5ac8c; padding-bottom: 2px; margin-bottom: 2px;">
-                        <span><strong>WTG #2 HAZARD:</strong></span>
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #b5ac8c; padding-bottom: 1px; margin-bottom: 1px;">
+                        <span><strong>WTG B:</strong></span>
                         <span><strong>240.0 kHz</strong></span>
                     </div>
                     <div style="display: flex; justify-content: space-between;">
-                        <span><strong>WTG #3 HAZARD:</strong></span>
+                        <span><strong>WTG C:</strong></span>
                         <span><strong>290.0 kHz</strong></span>
                     </div>
                 </div>
@@ -451,6 +458,18 @@ export class Kneeboard {
         this.playerRef = player;
         if (!this.visible) return;
 
+        // Auto-detect windFarmRef from global reference or scene userData if not explicitly linked
+        if (!this.windFarmRef && window.windFarm) {
+            this.windFarmRef = window.windFarm;
+        }
+        if (!this.windFarmRef && player && player.model && player.model.parent) {
+            player.model.parent.traverse((child) => {
+                if (child.activeFireIndex !== undefined || child.burningIndex !== undefined || child.fireIndex !== undefined || child.turbines || (child.userData && child.userData.activeFireIndex !== undefined)) {
+                    this.windFarmRef = child;
+                }
+            });
+        }
+
         if (player) {
             const allowed = this.isConfigAllowed(player);
             const fuelSlider = document.getElementById('kb-fuel-slider');
@@ -473,6 +492,31 @@ export class Kneeboard {
             }
 
             this.updateManifestDisplay();
+
+            // Only update live fire indicators on the aviation chart if systems are off & landed.
+            // When systems are active/airborne, the chart holds its last checked state without displaying overlay banners.
+            if (allowed) {
+                const wf = this.windFarmRef;
+                const activeFireIdx = wf ? (
+                    wf.activeFireIndex !== undefined ? wf.activeFireIndex :
+                    wf.burningIndex !== undefined ? wf.burningIndex :
+                    wf.fireIndex !== undefined ? wf.fireIndex :
+                    (wf.userData && wf.userData.activeFireIndex !== undefined ? wf.userData.activeFireIndex : -1)
+                ) : (window.windFarm && window.windFarm.activeFireIndex !== undefined ? window.windFarm.activeFireIndex : -1);
+
+                for (let i = 0; i < 3; i++) {
+                    const circleEl = document.getElementById(`chart-wtg-circle-${i}`);
+                    const textEl = document.getElementById(`chart-wtg-text-${i}`);
+                    const isOnFire = (i === activeFireIdx);
+
+                    if (circleEl) {
+                        circleEl.setAttribute('fill', isOnFire ? '#c05000' : '#222222');
+                    }
+                    if (textEl) {
+                        textEl.setAttribute('fill', isOnFire ? '#c05000' : '#222222');
+                    }
+                }
+            }
         }
     }
 }
