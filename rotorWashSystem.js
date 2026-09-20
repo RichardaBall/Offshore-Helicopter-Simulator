@@ -71,6 +71,22 @@ export class RotorWashSystem {
             return;
         }
 
+        // If the helicopter has crashed in the sea, hide and suppress the rotorwash completely
+        if (helicopterPlayer.hasCrashedInSea) {
+            if (this.particleSystem.visible) {
+                this.particleSystem.visible = false;
+                // Clear active particles instantly
+                for (let i = 0; i < this.particlesCount; i++) {
+                    this.positions[i * 3 + 1] = -5000;
+                    this.lifetimes[i] = 0;
+                }
+                this.geometry.attributes.position.needsUpdate = true;
+            }
+            return;
+        } else if (!this.particleSystem.visible) {
+            this.particleSystem.visible = true;
+        }
+
         const heliPos = new THREE.Vector3();
         helicopterPlayer.model.getWorldPosition(heliPos);
 
