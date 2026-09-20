@@ -11,6 +11,8 @@ export class HelicopterPlayer {
         this.onSeaCrash = null;
         this.hasCrashedOnHelipad = false;
         this.onHelipadCrash = null;
+        this.hasCrashedIntoStructure = false;
+        this.onStructureCrash = null;
         this.isPermanentlyDamaged = false; // Gear-up landing damage state
 
         // Find and cache the top strobe light and its bulb mesh once
@@ -231,7 +233,37 @@ export class HelicopterPlayer {
         this.isGearUp = willBeGearUp;
     }
 
-    update(delta, keys, weatherData) {
+    checkCollisions(windFarm, mainBase) {
+        if (this.hasCrashedInSea || this.isPermanentlyDamaged || this.hasCrashedIntoStructure) return false;
+
+        // Construct helicopter bounding box
+        const heliBox = new THREE.Box3().setFromObject(this.model);
+        // Slightly shrink bounding box for forgiving gameplay
+        heliBox.expandByScalar(-0.5);
+
+        const allBoxes = [];
+        if (windFarm && typeof windFarm.getCollisionBoxes === 'function') {
+            allBoxes.push(...windFarm.getCollisionBoxes());
+        }
+        if (mainBase && typeof mainBase.getCollisionBoxes === 'function') {
+            allBoxes.push(...mainBase.getCollisionBoxes());
+        }
+
+        for (let i = 0; i < allBoxes.length; i++) {
+            if (heliBox.intersectsBox(allBoxes[i])) {
+                // Ensure helipad zone remains crash-free (check if collision point is within helipad landing zone radius 12m)
+                const helipadCenter2D = new THREE.Vector2(0.0, 0.0);
+                const heliPos2D = new THREE.Vector2(this.model.position.x, this.model.position.z);
+                if (heliPos2D.distanceTo(helipadCenter2D) < 12.0) {
+                    continue; // Skip collision in helipad zone to keep it crash-free
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    update(delta, keys, weatherData, windFarm = null, mainBase = null) {
         if (this.hasCrashedInSea || this.isPermanentlyDamaged) {
             if (this.isPermanentlyDamaged) {
                 // Lock position to ground level and stop all rotor animations
@@ -419,6 +451,9 @@ export class HelicopterPlayer {
         this.currentTurnSpeed += (targetTurn - this.currentTurnSpeed) * Math.min(2.0 * delta, 1.0);
         this.currentAltitudeSpeed += (targetAltitude - this.currentAltitudeSpeed) * Math.min(3.5 * massFactor * delta, 1.0);
 
+        // --- Position & Collision Integration ---
+        const prevPosition = this.model.position.clone();
+
         if (Math.abs(this.currentMoveSpeed) > 0.001) this.model.translateX(this.currentMoveSpeed * delta);
         if (Math.abs(this.currentTurnSpeed) > 0.001) this.model.rotation.y += this.currentTurnSpeed * delta;
 
@@ -441,6 +476,27 @@ export class HelicopterPlayer {
         }
 
         this.model.position.y = newY;
+
+        // Check structure collisions with WTGs and Main Base (helipad crash-free)
+        if (this.checkCollisions(windFarm, mainBase)) {
+            console.warn("AW189: Structural collision detected with WTG or Main Base!");
+            this.model.position.copy(prevPosition); // Revert position on collision
+            this.isPermanentlyDamaged = true;
+            this.hasCrashedIntoStructure = true;
+            this.isElectricalOn = false;
+            this.isFuelPumpOn = false;
+            this.targetEnginePower = 0.0;
+            this.enginePower = 0.0;
+            this.isEngineRunning = false;
+            if (this.soundManager) {
+                this.soundManager.stopHelicopterEngine();
+            }
+            if (this.onStructureCrash) {
+                this.onStructureCrash(this.model.position.clone());
+            }
+            return;
+        }
+
         this.wasOnGround = isOnGround;
     }
 }

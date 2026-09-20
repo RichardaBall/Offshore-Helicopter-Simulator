@@ -1,11 +1,39 @@
+import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+
 export class DeveloperTool {
-    constructor(weatherSystem) {
+    constructor(weatherSystem, windFarm = null, mainBase = null, helicopterPlayer = null, camera = null, renderer = null) {
         this.weatherSystem = weatherSystem;
+        this.windFarm = windFarm;
+        this.mainBase = mainBase;
+        this.helicopterPlayer = helicopterPlayer;
+        this.camera = camera;
+        this.renderer = renderer;
         this.isVisible = false;
         this.container = null;
+        this.isFreeCamActive = false;
+        this.orbitControls = null;
+
+        if (this.camera && this.renderer) {
+            this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement);
+            this.orbitControls.enabled = false;
+            this.orbitControls.enableDamping = true;
+            this.orbitControls.dampingFactor = 0.05;
+        }
+
+        // Free-cam & smooth transition state
+        this.keysDown = {};
+        this.isTransitioning = false;
+        this.transitionStartPos = new THREE.Vector3();
+        this.transitionTargetPos = new THREE.Vector3();
+        this.transitionStartTarget = new THREE.Vector3();
+        this.transitionTargetTarget = new THREE.Vector3();
+        this.transitionProgress = 0;
+        this.transitionDuration = 0.8; // seconds
 
         this.initUI();
         this.initListeners();
+        this.startUpdateLoop();
     }
 
     initUI() {
@@ -15,8 +43,8 @@ export class DeveloperTool {
             position: fixed;
             top: 20px;
             left: 20px;
-            width: 280px;
-            background: rgba(15, 23, 42, 0.9);
+            width: 320px;
+            background: rgba(15, 23, 42, 0.95);
             border: 1px solid rgba(56, 189, 248, 0.4);
             border-radius: 8px;
             padding: 16px;
@@ -52,8 +80,18 @@ export class DeveloperTool {
                 </div>
             </div>
 
-            <div style="font-size: 10px; color: #64748b; text-align: center; margin-top: 8px;">
-                Press [T] to toggle menu
+            <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; margin-bottom: 14px;">
+                <label style="display: block; color: #38bdf8; margin-bottom: 8px; font-size: 11px; text-transform: uppercase; font-weight: bold;">Camera & Navigation</label>
+                <div style="display: flex; gap: 6px; margin-bottom: 6px;">
+                    <button id="dev-teleport" style="flex: 1; background: #f59e0b; border: none; color: white; padding: 6px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px;">✈️ Teleport to Base</button>
+                </div>
+                <div style="display: flex; gap: 6px;">
+                    <button id="dev-free-cam" style="flex: 1; background: #7c3aed; border: none; color: white; padding: 6px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px;">📷 Free Camera: OFF</button>
+                </div>
+            </div>
+
+            <div style="font-size: 10px; color: #64748b; text-align: center; margin-top: 4px;">
+                [T] Toggle Menu | [WASD + Q/E] Free-Roam Cam
             </div>
         `;
 
@@ -64,7 +102,6 @@ export class DeveloperTool {
         
         document.getElementById('dev-btn-day').addEventListener('click', () => {
             if (this.weatherSystem) {
-                // Set dayNightTimer to 25% of cycle (Sun at peak noon)
                 this.weatherSystem.dayNightTimer = 0.25 * this.weatherSystem.dayCycleDuration;
                 this.updateActiveStates();
             }
@@ -72,7 +109,6 @@ export class DeveloperTool {
 
         document.getElementById('dev-btn-night').addEventListener('click', () => {
             if (this.weatherSystem) {
-                // Set dayNightTimer to 75% of cycle (Sun at lowest midnight)
                 this.weatherSystem.dayNightTimer = 0.75 * this.weatherSystem.dayCycleDuration;
                 this.updateActiveStates();
             }
@@ -98,6 +134,83 @@ export class DeveloperTool {
                 this.updateActiveStates();
             }
         });
+
+        document.getElementById('dev-teleport').addEventListener('click', () => {
+            this.teleportToTarget();
+        });
+
+        document.getElementById('dev-free-cam').addEventListener('click', () => {
+            this.toggleFreeCam();
+        });
+    }
+
+    toggleFreeCam() {
+        if (!this.orbitControls || !this.camera) {
+            alert('Free camera controls not available.');
+            return;
+        }
+
+        this.isFreeCamActive = !this.isFreeCamActive;
+        this.orbitControls.enabled = this.isFreeCamActive;
+
+        const btn = document.getElementById('dev-free-cam');
+        if (btn) {
+            btn.style.background = this.isFreeCamActive ? '#10b981' : '#7c3aed';
+            btn.textContent = `📷 Free Camera: ${this.isFreeCamActive ? 'ON' : 'OFF'}`;
+        }
+
+        if (this.isFreeCamActive) {
+            const targetPos = this.getTargetPosition();
+            const endCamPos = targetPos.clone().add(new THREE.Vector3(25, 20, 25));
+            this.smoothTransitionTo(endCamPos, targetPos);
+            console.log('Free camera inspection mode enabled. Orbiting & WASD flying around:', targetPos);
+        } else {
+            console.log('Free camera inspection mode disabled. Returning to helicopter follow camera.');
+        }
+    }
+
+    getTargetPosition() {
+        const targetPos = new THREE.Vector3(0, 10, 0);
+        if (this.mainBase && this.mainBase.group && this.mainBase.group.position) {
+            targetPos.copy(this.mainBase.group.position);
+            targetPos.y += 10;
+        }
+        return targetPos;
+    }
+
+    smoothTransitionTo(endCamPos, endTarget) {
+        if (!this.orbitControls || !this.camera) return;
+        this.transitionStartPos.copy(this.camera.position);
+        this.transitionTargetPos.copy(endCamPos);
+        this.transitionStartTarget.copy(this.orbitControls.target);
+        this.transitionTargetTarget.copy(endTarget);
+        this.transitionProgress = 0;
+        this.isTransitioning = true;
+    }
+
+    teleportToTarget() {
+        if (!this.helicopterPlayer || !this.helicopterPlayer.model) {
+            alert('Helicopter player not available for teleportation.');
+            return;
+        }
+
+        const targetPos = this.getTargetPosition();
+        targetPos.y += 25; // Offset above platform
+
+        this.helicopterPlayer.model.position.copy(targetPos);
+        this.helicopterPlayer.currentMoveSpeed = 0;
+        this.helicopterPlayer.currentTurnSpeed = 0;
+        this.helicopterPlayer.currentAltitudeSpeed = 0;
+        this.helicopterPlayer.verticalVelocity = 0;
+
+        if (this.isFreeCamActive) {
+            const endTarget = this.getTargetPosition();
+            const endCamPos = endTarget.clone().add(new THREE.Vector3(20, 15, 20));
+            this.smoothTransitionTo(endCamPos, endTarget);
+        }
+
+        console.log('Teleported helicopter to main base at:', targetPos);
+        alert('Successfully teleported helicopter to main base!');
     }
 
     initListeners() {
@@ -106,12 +219,80 @@ export class DeveloperTool {
                 if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
                 this.toggle();
             }
+
+            if (this.isFreeCamActive) {
+                this.keysDown[event.code] = true;
+            }
         });
+
+        window.addEventListener('keyup', (event) => {
+            if (this.isFreeCamActive) {
+                this.keysDown[event.code] = false;
+            }
+        });
+    }
+
+    startUpdateLoop() {
+        let lastTime = performance.now();
+        const update = () => {
+            requestAnimationFrame(update);
+            const currentTime = performance.now();
+            const delta = Math.min((currentTime - lastTime) / 1000, 0.1);
+            lastTime = currentTime;
+
+            if (this.isTransitioning && this.camera && this.orbitControls) {
+                this.transitionProgress += delta / this.transitionDuration;
+                const t = Math.min(this.transitionProgress, 1.0);
+                const easeT = 1 - Math.pow(1 - t, 3);
+
+                this.camera.position.lerpVectors(this.transitionStartPos, this.transitionTargetPos, easeT);
+                this.orbitControls.target.lerpVectors(this.transitionStartTarget, this.transitionTargetTarget, easeT);
+                this.orbitControls.update();
+
+                if (t >= 1.0) {
+                    this.isTransitioning = false;
+                }
+            }
+
+            if (this.isFreeCamActive && this.camera && this.orbitControls && !this.isTransitioning) {
+                const moveSpeed = 35.0 * delta;
+                const dir = new THREE.Vector3();
+                this.camera.getWorldDirection(dir);
+                dir.y = 0;
+                dir.normalize();
+
+                const sideDir = new THREE.Vector3(-dir.z, 0, dir.x);
+
+                const moveDelta = new THREE.Vector3();
+                if (this.keysDown['KeyW'] || this.keysDown['ArrowUp']) moveDelta.add(dir);
+                if (this.keysDown['KeyS'] || this.keysDown['ArrowDown']) moveDelta.sub(dir);
+                if (this.keysDown['KeyD'] || this.keysDown['ArrowRight']) moveDelta.add(sideDir);
+                if (this.keysDown['KeyA'] || this.keysDown['ArrowLeft']) moveDelta.sub(sideDir);
+
+                if (moveDelta.lengthSq() > 0) {
+                    moveDelta.normalize().multiplyScalar(moveSpeed);
+                    this.camera.position.add(moveDelta);
+                    this.orbitControls.target.add(moveDelta);
+                    this.orbitControls.update();
+                }
+
+                let vertDelta = 0;
+                if (this.keysDown['KeyE'] || this.keysDown['Space']) vertDelta += moveSpeed;
+                if (this.keysDown['KeyQ'] || this.keysDown['ControlLeft']) vertDelta -= moveSpeed;
+                if (vertDelta !== 0) {
+                    this.camera.position.y += vertDelta;
+                    this.orbitControls.target.y += vertDelta;
+                    this.orbitControls.update();
+                }
+            }
+        };
+        requestAnimationFrame(update);
     }
 
     toggle() {
         this.isVisible = !this.isVisible;
         this.container.style.display = this.isVisible ? 'block' : 'none';
+
         if (this.isVisible) {
             this.updateActiveStates();
         }

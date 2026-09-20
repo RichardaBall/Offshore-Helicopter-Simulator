@@ -27,15 +27,15 @@ const waterSystem = new WaterSystem(scene);
 const rotorWashSystem = new RotorWashSystem(scene);
 const helipadDebrisSystem = new HelipadDebrisSystem(scene);
 const sirenSystem = new SirenSystem(scene, null);
-const developerTool = new DeveloperTool(weatherSystem);
-
-const clock = new THREE.Clock();
 
 let helicopterPlayer = null;
 let navRadio = null;
 let navIndicator = null;
 let mainBase = null;
 let windFarm = null;
+let developerTool = null;
+
+const clock = new THREE.Clock();
 
 let redLight, greenLight, strobeLight, landingLight, cockpitLight;
 let redBulb, greenBulb, strobeBulb;
@@ -86,9 +86,6 @@ const loadingManager = new THREE.LoadingManager(
 
 // Initialize WindFarm and MainBase passing the shared loadingManager
 windFarm = new WindFarm(scene, loadingManager);
-
-const loader = new GLTFLoader(loadingManager);
-
 mainBase = new MainBase(scene, loadingManager, (spawnPosition) => {
     loader.load('helicopter.glb', (gltfHeli) => {
         const model = gltfHeli.scene;
@@ -167,7 +164,10 @@ mainBase = new MainBase(scene, loadingManager, (spawnPosition) => {
         navRadio = new NavRadio(helicopterPlayer, spawnPosition);
         navIndicator = new NavIndicator(helicopterPlayer, navRadio, model, { x: -1.6, y: 3.95, z: 0.16 });
 
-        // Instantly snap camera to the correct follow position upon spawn so it never jumps or zooms in from the origin
+        // Initialize developerTool with camera and renderer for Free Camera & OrbitControls
+        developerTool = new DeveloperTool(weatherSystem, windFarm, mainBase, helicopterPlayer, camera, renderer);
+
+        // Instantly snap camera to the correct follow position upon spawn
         if (camera && inputManager) {
             const elevationAngle = 45 * (Math.PI / 180); 
             const cosAlpha = Math.cos(elevationAngle);
@@ -221,10 +221,19 @@ mainBase = new MainBase(scene, loadingManager, (spawnPosition) => {
             }
         };
 
+        helicopterPlayer.onStructureCrash = (crashPos) => {
+            console.log("AW189: Structural collision crash sustained at position:", crashPos);
+            if (soundManager) {
+                soundManager.stopHelicopterEngine();
+            }
+        };
+
     }, undefined, (error) => {
         console.error("Helicopter model failed to load:", error);
     });
 });
+
+const loader = new GLTFLoader(loadingManager);
 
 function animate() {
     requestAnimationFrame(animate);
@@ -280,7 +289,7 @@ function animate() {
     }
 
     if (helicopterPlayer && helicopterPlayer.model) {
-        helicopterPlayer.update(delta, inputManager ? inputManager.keys : {}, weatherData);
+        helicopterPlayer.update(delta, inputManager ? inputManager.keys : {}, weatherData, windFarm, mainBase);
         
         if (water && !helicopterPlayer.hasCrashedInSea) {
             water.position.x = helicopterPlayer.model.position.x;
@@ -316,7 +325,10 @@ function animate() {
             cockpitLight.intensity = electricalActive ? 3.5 : 0.0;
         }
 
-        if (inputManager && camera && !helicopterPlayer.hasCrashedInSea) {
+        // Camera update logic: Check if Free Camera is active, otherwise follow helicopter
+        if (developerTool && developerTool.isFreeCamActive && developerTool.orbitControls) {
+            developerTool.orbitControls.update();
+        } else if (inputManager && camera && !helicopterPlayer.hasCrashedInSea) {
             const elevationAngle = 45 * (Math.PI / 180); 
             const cosAlpha = Math.cos(elevationAngle);
             const sinAlpha = Math.sin(elevationAngle);
