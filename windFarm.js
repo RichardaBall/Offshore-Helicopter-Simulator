@@ -39,6 +39,7 @@ export class WindFarm {
                 if (child.isMesh) {
                     child.castShadow = false;
                     child.receiveShadow = false;
+                    child.frustumCulled = false;
                 }
             });
 
@@ -50,6 +51,7 @@ export class WindFarm {
 
             for (let i = 0; i < 3; i++) {
                 const turbineGroup = baseModel.clone(true);
+                turbineGroup.frustumCulled = false;
 
                 const currentRadius = baseRadius + (i * radiusIncrement);
                 const currentAngle = i * angleStep; // Spread around the circle
@@ -68,6 +70,7 @@ export class WindFarm {
                 const dz = targetZ - zPos;
                 turbineGroup.rotation.y = Math.atan2(dx, dz);
 
+                turbineGroup.updateMatrixWorld(true);
                 this.scene.add(turbineGroup);
 
                 let rotorMesh = null;
@@ -75,6 +78,7 @@ export class WindFarm {
 
                 turbineGroup.traverse((child) => {
                     if (child.isMesh) {
+                        child.frustumCulled = false;
                         meshes.push(child);
                         const name = child.name.toLowerCase();
                         if (
@@ -123,6 +127,11 @@ export class WindFarm {
                 });
             }
 
+            const canvas = document.querySelector('canvas');
+            if (canvas && canvas.__threeRenderer) {
+                canvas.__threeRenderer.compile(this.scene, window.camera || new THREE.PerspectiveCamera());
+            }
+
             this.initFireVFX();
 
             // Spawn first fire immediately on a random WTG upon startup
@@ -131,7 +140,7 @@ export class WindFarm {
                 this.fireSpawnTriggered = true;
             }
 
-            console.log("Successfully spawned 3 circular wind turbines using precise atan2 origin alignment facing inward.");
+            console.log("Successfully spawned 3 circular wind turbines with disabled frustum culling to prevent entry stutter.");
 
         }, undefined, (error) => {
             console.error("WTG model failed to load for wind farm:", error);
