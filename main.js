@@ -21,7 +21,6 @@ const weatherSystem = new WeatherSystem();
 const inputManager = new InputManager();
 const soundManager = new SoundManager();
 const kneeboard = new Kneeboard();
-const windFarm = new WindFarm(scene);
 const liferaftManager = new LiferaftManager(scene);
 const waterSystem = new WaterSystem(scene);
 const rotorWashSystem = new RotorWashSystem(scene);
@@ -34,13 +33,14 @@ let helicopterPlayer = null;
 let navRadio = null;
 let navIndicator = null;
 let mainBase = null;
+let windFarm = null;
 
 let redLight, greenLight, strobeLight, landingLight, cockpitLight;
 let redBulb, greenBulb, strobeBulb;
 let heliLightsGroup;
 let heliShadow = null;
 
-// Loading Manager to track asset loading progress
+// Loading Manager to track asset loading progress across all models
 const loadingManager = new THREE.LoadingManager(
     () => {
         const loadingScreen = document.getElementById('loading-screen');
@@ -63,9 +63,12 @@ const loadingManager = new THREE.LoadingManager(
     }
 );
 
+// Initialize WindFarm and MainBase passing the shared loadingManager
+windFarm = new WindFarm(scene, loadingManager);
+
 const loader = new GLTFLoader(loadingManager);
 
-mainBase = new MainBase(scene, (spawnPosition) => {
+mainBase = new MainBase(scene, loadingManager, (spawnPosition) => {
     loader.load('helicopter.glb', (gltfHeli) => {
         const model = gltfHeli.scene;
         model.position.copy(spawnPosition);
@@ -148,6 +151,22 @@ mainBase = new MainBase(scene, (spawnPosition) => {
 
         navRadio = new NavRadio(helicopterPlayer, spawnPosition);
         navIndicator = new NavIndicator(helicopterPlayer, navRadio, model, { x: -1.6, y: 3.95, z: 0.16 });
+
+        // Instantly snap camera to the correct follow position upon spawn so it never jumps or zooms in from the origin
+        if (camera && inputManager) {
+            const elevationAngle = 45 * (Math.PI / 180); 
+            const cosAlpha = Math.cos(elevationAngle);
+            const sinAlpha = Math.sin(elevationAngle);
+            const diagFactor = 0.7071;
+            const dist = inputManager.cameraDistance || 30;
+            const offsetX = dist * cosAlpha * diagFactor;
+            const offsetY = dist * sinAlpha;
+            const offsetZ = dist * cosAlpha * diagFactor;
+
+            const initialCamPos = model.position.clone().add(new THREE.Vector3(offsetX, offsetY, offsetZ));
+            camera.position.copy(initialCamPos);
+            camera.lookAt(model.position);
+        }
 
         helicopterPlayer.onSeaCrash = (crashPos) => {
             console.log("AW189: Sea crash event triggered at position:", crashPos);

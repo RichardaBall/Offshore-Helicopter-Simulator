@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 export class WindFarm {
-    constructor(scene) {
+    constructor(scene, loadingManager) {
         this.scene = scene;
         this.turbines = [];
 
@@ -28,7 +28,7 @@ export class WindFarm {
         this.waterHitsRequired = 30;
         this.currentWaterHits = 0;
 
-        const loader = new GLTFLoader();
+        const loader = loadingManager ? new GLTFLoader(loadingManager) : new GLTFLoader();
         loader.load('WTG.glb', (gltf) => {
             const baseModel = gltf.scene;
 

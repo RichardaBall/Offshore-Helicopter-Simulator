@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 export class MainBase {
-    constructor(scene, onLoadedCallback) {
+    constructor(scene, loadingManager, onLoadedCallback) {
         this.scene = scene;
         this.group = new THREE.Group();
         this.scene.add(this.group);
@@ -11,11 +11,11 @@ export class MainBase {
         this.explicitSpawnPosition = new THREE.Vector3(3.3690, 6.2360, 0.4548);
         this.helipadCenter = new THREE.Vector3(this.explicitSpawnPosition.x, 5.336, this.explicitSpawnPosition.z);
 
-        this.loadBase(onLoadedCallback);
+        this.loadBase(loadingManager, onLoadedCallback);
     }
 
-    loadBase(onLoadedCallback) {
-        const loader = new GLTFLoader();
+    loadBase(loadingManager, onLoadedCallback) {
+        const loader = loadingManager ? new GLTFLoader(loadingManager) : new GLTFLoader();
         loader.load('mainbase.glb', (gltf) => {
             const model = gltf.scene;
             model.position.set(0, 0, 0);
