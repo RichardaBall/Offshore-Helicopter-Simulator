@@ -10,7 +10,7 @@ A 3D offshore helicopter flight simulation game built using Three.js, WebGL, and
 * **`index.html`**: Main HTML entry point loading the Three.js canvas, HUD overlay elements, fuel test slider, fullscreen controls, and styles.
 * **`main.js`**: Central application loop; handles scene orchestration, lighting, model loading, shadow positioning, camera tracking, and game state updates.
 * **`sceneSetup.js`**: Initializes the Three.js core environment (`Scene`, `Camera`, `WebGLRenderer`, directional/ambient lighting, fog, and the dynamic ocean water plane).
-* **`player.js`**: Controls `HelicopterPlayer` flight physics, mass calculations, rotor rotation, autorotation mechanics, landing gear drag, fuel consumption rates, strobe low-fuel warnings, and engine state.
+* **`player.js`**: Controls `HelicopterPlayer` flight physics, fast ~3s engine spool-up time, mass calculations, rotor rotation, autorotation mechanics, landing gear drag, fuel consumption rates, strobe low-fuel warnings, and engine state.
 * **`inputManager.js`**: Translates raw user input into flight movement vectors, prioritizing keyboard arrow keys, managing camera distance via mouse scroll, and detecting space bar input for water dispensing.
 * **`waterSystem.js`**: Manages the aerial firefighting water/foam drop particle system; generates procedural soft radial canvas textures for aerated mist, handles volumetric particle blending, gravitational acceleration, and aerodynamic slipstream drag.
 * **`SoundManager.js`**: Procedural Web Audio API sound generator for electrical clicks, fuel pump prime, landing gear servos, turbine pitch modulation, rotor blade slap ("whop-whop"), and cockpit rain audio.
@@ -22,15 +22,13 @@ A 3D offshore helicopter flight simulation game built using Three.js, WebGL, and
 * **`mainbase.js`**: Main Base module loading the offshore platform model serving as the primary helipad, spawn point, and NDB beacon target.
 * **`liferaft.js`**: Liferaft module managing emergency sea crash deployment and survival raft simulation upon water impacts.
 * **`sirenSystem.js`**: Emergency beacon system managing industrial rotating red siren lights and dynamic spotlights on the main base during fire emergencies.
-* **`rotorWashSystem.js`**: Rotor wash particle system simulating downwash surface interactions and water disturbance beneath the helicopter rotors.
-* **`helipadDebrisSystem.js`**: Helipad downwash dust and debris particle system reacting to helicopter proximity.
-* **`utilities.js`**: Utility development tool for placing, undoing, and exporting main base light coordinates (`[C]`, `[Z]`, `[P]`).
+* **`lightPlacer.js`**: Utility development tool for placing, undoing, and exporting main base light coordinates (`[C]`, `[Z]`, `[P]`).
 
 ### Core Controls & Key Bindings
 
 * **`[Q]`**: Toggle Electrical System (Battery)
 * **`[F]`**: Toggle Fuel Pump
-* **`[E]`**: Toggle Engine Ignition / Fuel Cutoff
+* **`[E]`**: Toggle Engine Ignition / Fuel Cutoff (~3s fast spool-up to lift-off readiness)
 * **`[G]`**: Toggle Landing Gear
 * **`[L]`**: Toggle Landing Light
 * **`[N]`**: Toggle NDB Navigation Radio Panel

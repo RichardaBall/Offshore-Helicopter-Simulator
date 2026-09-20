@@ -155,10 +155,11 @@ export class SoundManager {
             pumpOsc.frequency.setValueAtTime(650, now + 0.4);
             pumpOsc.frequency.linearRampToValueAtTime(600, now + duration);
 
-            pumpGain.gain.setValueAtTime(0.01, now);
-            pumpGain.gain.linearRampToValueAtTime(0.2, now + 0.1);
-            pumpGain.gain.setValueAtTime(0.2, now + duration - 0.2);
-            pumpGain.gain.linearRampToValueAtTime(0.001, now + duration);
+            // Volume reduced by 50% (peak gain scaled from 0.2 to 0.1)
+            pumpGain.gain.setValueAtTime(0.005, now);
+            pumpGain.gain.linearRampToValueAtTime(0.1, now + 0.1);
+            pumpGain.gain.setValueAtTime(0.1, now + duration - 0.2);
+            pumpGain.gain.linearRampToValueAtTime(0.0005, now + duration);
 
             const filter = this.audioCtx.createBiquadFilter();
             filter.type = 'bandpass';

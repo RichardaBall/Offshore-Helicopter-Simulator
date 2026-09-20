@@ -9,6 +9,9 @@ export class HelicopterPlayer {
 
         this.hasCrashedInSea = false;
         this.onSeaCrash = null;
+        this.hasCrashedOnHelipad = false;
+        this.onHelipadCrash = null;
+        this.isPermanentlyDamaged = false; // Gear-up landing damage state
 
         // Find and cache the top strobe light and its bulb mesh once
         this.strobeLight = null;
@@ -108,6 +111,10 @@ export class HelicopterPlayer {
     }
 
     toggleElectrical() {
+        if (this.isPermanentlyDamaged) {
+            console.warn("System unresponsive: Aircraft has sustained severe gear-up landing damage.");
+            return;
+        }
         this.isElectricalOn = !this.isElectricalOn;
         console.log("Electrical System: " + (this.isElectricalOn ? "ON" : "OFF"));
         if (this.soundManager) {
@@ -120,6 +127,10 @@ export class HelicopterPlayer {
     }
 
     toggleFuelPump() {
+        if (this.isPermanentlyDamaged) {
+            console.warn("System unresponsive: Aircraft has sustained severe gear-up landing damage.");
+            return;
+        }
         this.isFuelPumpOn = !this.isFuelPumpOn;
         console.log("Fuel Pump: " + (this.isFuelPumpOn ? "ON" : "OFF"));
         if (this.soundManager) {
@@ -138,6 +149,10 @@ export class HelicopterPlayer {
     }
 
     toggleEngine() {
+        if (this.isPermanentlyDamaged) {
+            console.warn("System unresponsive: Aircraft has sustained severe gear-up landing damage.");
+            return;
+        }
         if (!this.isElectricalOn && this.targetEnginePower === 0) {
             console.warn("Cannot start engine: Electrical system (Q) is OFF.");
             return;
@@ -182,7 +197,20 @@ export class HelicopterPlayer {
     }
 
     toggleLandingGear() {
+        if (this.isPermanentlyDamaged) {
+            console.warn("System unresponsive: Aircraft has sustained severe gear-up landing damage.");
+            return;
+        }
         if (!this.isElectricalOn) return;
+
+        // Prevent retracting landing gear while on the ground
+        const activeGroundLevel = this.getCurrentGroundLevel();
+        const isOnGround = this.model.position.y <= activeGroundLevel + 0.05;
+        if (isOnGround && !this.isGearUp) {
+            console.warn("Cannot retract landing gear while landed on the ground.");
+            return;
+        }
+
         let gearAction = null;
         for (let name in this.actions) {
             if (name.toLowerCase().includes('gear') || name.toLowerCase().includes('landing')) {
@@ -204,7 +232,24 @@ export class HelicopterPlayer {
     }
 
     update(delta, keys, weatherData) {
-        if (this.hasCrashedInSea) return;
+        if (this.hasCrashedInSea || this.isPermanentlyDamaged) {
+            if (this.isPermanentlyDamaged) {
+                // Lock position to ground level and stop all rotor animations
+                const activeGroundLevel = this.getCurrentGroundLevel();
+                this.model.position.y = activeGroundLevel;
+                this.currentMoveSpeed = 0.0;
+                this.currentTurnSpeed = 0.0;
+                this.currentAltitudeSpeed = 0.0;
+                if (this.mixer) this.mixer.update(delta);
+                for (let name in this.actions) {
+                    if (name.toLowerCase().includes('rotor') || name.toLowerCase().includes('armature') || name.includes('Арматура')) {
+                        const action = this.actions[name];
+                        if (action.isRunning()) action.stop();
+                    }
+                }
+            }
+            return;
+        }
 
         // --- Immediate Top-Level Sea Crash Check ---
         const helipadCenter2D = new THREE.Vector2(0.0, 0.0);
@@ -224,6 +269,33 @@ export class HelicopterPlayer {
             return;
         }
 
+        const activeGroundLevel = this.getCurrentGroundLevel();
+        const isOnGround = this.model.position.y <= activeGroundLevel + 0.05;
+
+        // --- Helipad Gear-Up Landing Damage Check ---
+        if (!this.wasOnGround && isOnGround && distanceFromHelipad < 12.0 && this.isGearUp) {
+            this.isPermanentlyDamaged = true;
+            this.hasCrashedOnHelipad = true;
+            this.isElectricalOn = false;
+            this.isFuelPumpOn = false;
+            this.targetEnginePower = 0.0;
+            this.enginePower = 0.0;
+            this.isEngineRunning = false;
+            this.currentMoveSpeed = 0.0;
+            this.currentTurnSpeed = 0.0;
+            this.currentAltitudeSpeed = 0.0;
+            this.model.position.y = activeGroundLevel;
+
+            if (this.soundManager) {
+                this.soundManager.stopHelicopterEngine();
+            }
+
+            if (this.onHelipadCrash) {
+                this.onHelipadCrash(this.model.position.clone());
+            }
+            return;
+        }
+
         if (this.mixer) this.mixer.update(delta);
 
         if (this.targetEnginePower > 0 && (!this.isFuelPumpOn || this.fuelKg <= 0)) {
@@ -236,9 +308,6 @@ export class HelicopterPlayer {
         } else if (this.isFuelPumpOn && this.fuelKg > 0 && this.isEngineRunning) {
             this.fuelStarvationTimer = 0.0;
         }
-
-        const activeGroundLevel = this.getCurrentGroundLevel();
-        const isOnGround = this.model.position.y <= activeGroundLevel + 0.05;
 
         if (this.enginePower > 0.01 && this.fuelKg > 0 && this.isFuelPumpOn) {
             const currentMass = this.getTotalMass();
@@ -281,7 +350,10 @@ export class HelicopterPlayer {
 
         if (this.enginePower !== this.targetEnginePower) {
             const diff = this.targetEnginePower - this.enginePower;
-            this.enginePower += diff * Math.min(delta * 0.35, 1.0);
+            this.enginePower += diff * Math.min(delta * 1.55, 1.0);
+            if (Math.abs(this.targetEnginePower - this.enginePower) < 0.001) {
+                this.enginePower = this.targetEnginePower;
+            }
         }
 
         if (this.soundManager && this.isEngineRunning) {
@@ -324,7 +396,8 @@ export class HelicopterPlayer {
         if (keys['ArrowLeft']) targetTurn += activeTurnSpeed;
         if (keys['ArrowRight']) targetTurn -= activeTurnSpeed;
 
-        if (this.enginePower >= 0.45) {
+        // --- 100% RPM Takeoff & Flight Restriction ---
+        if (this.enginePower >= 0.99) {
             if (keys['ArrowUp']) targetMove -= activeSpeedLimit;
             if (keys['ArrowDown']) targetMove += activeSpeedLimit;
             if (keys['ShiftLeft'] || keys['ShiftRight']) targetAltitude += (this.maxAltitudeSpeed * this.enginePower * activeLiftMultiplier) * massFactor;
@@ -334,8 +407,12 @@ export class HelicopterPlayer {
             targetAltitude -= sinkRate;
             targetMove -= sinkRate * 4.0;
         } else {
+            // On ground and RPM < 100%: allow taxiing, but strictly prevent lift off / positive altitude changes
             if (keys['ArrowUp']) targetMove -= activeSpeedLimit;
             if (keys['ArrowDown']) targetMove += activeSpeedLimit;
+            if (keys['ControlLeft'] || keys['ControlRight']) {
+                targetAltitude -= (this.maxAltitudeSpeed * this.enginePower * activeLiftMultiplier) * massFactor;
+            }
         }
 
         this.currentMoveSpeed += (targetMove - this.currentMoveSpeed) * Math.min((isOnGround ? 2.0 : 0.8) * massFactor * delta, 1.0);

@@ -212,6 +212,13 @@ mainBase = new MainBase(scene, loadingManager, (spawnPosition) => {
             }
         };
 
+        helicopterPlayer.onHelipadCrash = (crashPos) => {
+            console.log("AW189: Gear-up landing damage sustained at position:", crashPos);
+            if (soundManager) {
+                soundManager.stopHelicopterEngine();
+            }
+        };
+
     }, undefined, (error) => {
         console.error("Helicopter model failed to load:", error);
     });
