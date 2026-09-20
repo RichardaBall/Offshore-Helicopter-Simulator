@@ -21,9 +21,7 @@ export class Kneeboard {
             position: absolute;
             bottom: 30px;
             left: 30px;
-            width: 324px; /* Scaled up by 20% from 270px */
-            transform: scale(1.2);
-            transform-origin: bottom left;
+            width: 270px;
             background: #d8d0b0;
             border: 4px solid #4a4532;
             border-radius: 8px;
