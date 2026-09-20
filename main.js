@@ -18,8 +18,8 @@ import { HelipadDebrisSystem } from './helipadDebrisSystem.js';
 
 const { scene, camera, renderer, water, sunLight, ambientLight } = setupScene();
 const weatherSystem = new WeatherSystem();
-const inputManager = new InputManager();
 const soundManager = new SoundManager();
+const inputManager = new InputManager(soundManager);
 const kneeboard = new Kneeboard();
 const liferaftManager = new LiferaftManager(scene);
 const waterSystem = new WaterSystem(scene);
@@ -39,6 +39,25 @@ let redLight, greenLight, strobeLight, landingLight, cockpitLight;
 let redBulb, greenBulb, strobeBulb;
 let heliLightsGroup;
 let heliShadow = null;
+
+// Global single keydown event listener for helicopter systems (Q, F, E, G)
+window.addEventListener('keydown', (e) => {
+    if (!helicopterPlayer) return;
+    if (e.repeat) return;
+
+    if (e.code === 'KeyQ') {
+        helicopterPlayer.toggleElectrical();
+    }
+    if (e.code === 'KeyF') {
+        helicopterPlayer.toggleFuelPump();
+    }
+    if (e.code === 'KeyE') {
+        helicopterPlayer.toggleEngine();
+    }
+    if (e.code === 'KeyG') {
+        helicopterPlayer.toggleLandingGear();
+    }
+});
 
 // Loading Manager to track asset loading progress across all models
 const loadingManager = new THREE.LoadingManager(
@@ -139,12 +158,6 @@ mainBase = new MainBase(scene, loadingManager, (spawnPosition) => {
         heliLightsGroup.add(cockpitLight);
 
         model.add(heliLightsGroup);
-
-        window.addEventListener('keydown', (e) => {
-            if (!helicopterPlayer) return;
-            if (e.code === 'KeyE') helicopterPlayer.toggleEngine();
-            if (e.code === 'KeyG') helicopterPlayer.toggleLandingGear();
-        });
 
         const mixer = new THREE.AnimationMixer(model);
         helicopterPlayer = new HelicopterPlayer(model, gltfHeli.animations, mixer, soundManager);
@@ -288,7 +301,7 @@ function animate() {
             redLight.intensity = electricalActive ? 2.5 : 0.0;
             greenLight.intensity = electricalActive ? 2.5 : 0.0;
             if (redBulb) redBulb.visible = electricalActive;
-            if (greenBulb) greenBulb.visible = greenBulb.visible = electricalActive;
+            if (greenBulb) greenBulb.visible = electricalActive;
 
             landingLight.intensity = (electricalActive && inputManager && inputManager.landingLightOn) ? 18.0 : 0.0;
             cockpitLight.intensity = electricalActive ? 3.5 : 0.0;

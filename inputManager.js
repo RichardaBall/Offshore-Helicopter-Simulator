@@ -1,5 +1,6 @@
 export class InputManager {
-    constructor() {
+    constructor(soundManager = null) {
+        this.soundManager = soundManager;
         this.keys = {};
         this.cameraDistance = 60;
         this.landingLightOn = false;
@@ -15,6 +16,13 @@ export class InputManager {
                 if (e.repeat) return;
                 this.landingLightOn = !this.landingLightOn;
                 console.log("Landing Light: " + (this.landingLightOn ? "ON" : "OFF"));
+                if (this.soundManager) {
+                    if (typeof this.soundManager.playBatterySwitchSound === 'function') {
+                        this.soundManager.playBatterySwitchSound(this.landingLightOn);
+                    } else if (typeof this.soundManager.playToggleSwitchSound === 'function') {
+                        this.soundManager.playToggleSwitchSound(this.landingLightOn);
+                    }
+                }
             }
         });
 

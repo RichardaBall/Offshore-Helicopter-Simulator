@@ -109,13 +109,26 @@ export class HelicopterPlayer {
 
     toggleElectrical() {
         this.isElectricalOn = !this.isElectricalOn;
+        console.log("Electrical System: " + (this.isElectricalOn ? "ON" : "OFF"));
         if (this.soundManager) {
-            this.soundManager.playBatterySwitchSound(this.isElectricalOn);
+            if (typeof this.soundManager.playToggleSwitchSound === 'function') {
+                this.soundManager.playToggleSwitchSound(this.isElectricalOn);
+            } else if (typeof this.soundManager.playBatterySwitchSound === 'function') {
+                this.soundManager.playBatterySwitchSound(this.isElectricalOn);
+            }
         }
     }
 
     toggleFuelPump() {
         this.isFuelPumpOn = !this.isFuelPumpOn;
+        console.log("Fuel Pump: " + (this.isFuelPumpOn ? "ON" : "OFF"));
+        if (this.soundManager) {
+            if (typeof this.soundManager.playToggleSwitchSound === 'function') {
+                this.soundManager.playToggleSwitchSound(this.isFuelPumpOn);
+            } else if (typeof this.soundManager.playBatterySwitchSound === 'function') {
+                this.soundManager.playBatterySwitchSound(this.isFuelPumpOn);
+            }
+        }
         if (this.isFuelPumpOn && this.soundManager) {
             this.soundManager.playFuelPumpPrimeSound();
         }
@@ -125,18 +138,29 @@ export class HelicopterPlayer {
     }
 
     toggleEngine() {
-        if (!this.isElectricalOn && this.targetEnginePower === 0) return;
-        if (this.fuelKg <= 0 && this.targetEnginePower === 0) return;
-        if (!this.isFuelPumpOn && this.targetEnginePower === 0) return;
+        if (!this.isElectricalOn && this.targetEnginePower === 0) {
+            console.warn("Cannot start engine: Electrical system (Q) is OFF.");
+            return;
+        }
+        if (this.fuelKg <= 0 && this.targetEnginePower === 0) {
+            console.warn("Cannot start engine: Out of fuel.");
+            return;
+        }
+        if (!this.isFuelPumpOn && this.targetEnginePower === 0) {
+            console.warn("Cannot start engine: Fuel pump (F) is OFF.");
+            return;
+        }
 
         if (this.targetEnginePower > 0) {
             this.targetEnginePower = 0.0;
             this.isEngineRunning = false;
+            console.log("Engine Ignition: OFF");
             if (this.soundManager) this.soundManager.stopHelicopterEngine();
         } else {
             this.targetEnginePower = 1.0;
             this.isEngineRunning = true;
             this.fuelStarvationTimer = 0.0;
+            console.log("Engine Ignition: ON");
             if (this.soundManager) this.soundManager.startHelicopterEngine();
             
             for (let name in this.actions) {
@@ -144,6 +168,15 @@ export class HelicopterPlayer {
                     const action = this.actions[name];
                     if (!action.isRunning()) action.reset().play();
                 }
+            }
+        }
+
+        const engineActive = this.targetEnginePower > 0;
+        if (this.soundManager) {
+            if (typeof this.soundManager.playToggleSwitchSound === 'function') {
+                this.soundManager.playToggleSwitchSound(engineActive);
+            } else if (typeof this.soundManager.playBatterySwitchSound === 'function') {
+                this.soundManager.playBatterySwitchSound(engineActive);
             }
         }
     }
@@ -192,14 +225,6 @@ export class HelicopterPlayer {
         }
 
         if (this.mixer) this.mixer.update(delta);
-
-        if (keys && keys['KeyQ']) {
-            if (!this.qKeyWasPressed) { this.toggleElectrical(); this.qKeyWasPressed = true; }
-        } else { this.qKeyWasPressed = false; }
-
-        if (keys && keys['KeyF']) {
-            if (!this.fKeyWasPressed) { this.toggleFuelPump(); this.fKeyWasPressed = true; }
-        } else { this.fKeyWasPressed = false; }
 
         if (this.targetEnginePower > 0 && (!this.isFuelPumpOn || this.fuelKg <= 0)) {
             this.fuelStarvationTimer += delta;

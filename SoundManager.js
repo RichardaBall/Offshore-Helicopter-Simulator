@@ -68,7 +68,6 @@ export class SoundManager {
         }
         if (this.audioCtx) {
             if (this.isMuted) {
-                // Suspending the audio context effectively mutes all audio processing from the tab's web audio context
                 this.audioCtx.suspend().catch(e => console.warn("Audio suspend error:", e));
             } else {
                 this.audioCtx.resume().catch(e => console.warn("Audio resume error:", e));
@@ -87,32 +86,55 @@ export class SoundManager {
         }
     }
 
-    // Synthesizes a crisp electrical breaker switch click sound
-    playBatterySwitchSound(isOn) {
+    // Synthesizes a realistic mechanical toggle switch flick sound (used for Q, E, F, L)
+    playToggleSwitchSound(isOn) {
         try {
             this.ensureContextRunning();
             if (!this.audioCtx || this.isMuted) return;
 
             const now = this.audioCtx.currentTime;
 
+            // 1. Sharp mechanical click / snap transient
             const osc = this.audioCtx.createOscillator();
             const gain = this.audioCtx.createGain();
 
-            osc.type = 'square';
-            osc.frequency.setValueAtTime(isOn ? 1200 : 800, now);
-            osc.frequency.exponentialRampToValueAtTime(isOn ? 400 : 200, now + 0.04);
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(isOn ? 1800 : 1400, now);
+            osc.frequency.exponentialRampToValueAtTime(300, now + 0.03);
 
-            gain.gain.setValueAtTime(0.4, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+            gain.gain.setValueAtTime(0.5, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
 
             osc.connect(gain);
             gain.connect(this.masterGain);
 
             osc.start(now);
-            osc.stop(now + 0.04);
+            osc.stop(now + 0.03);
+
+            // 2. Body thunk / housing resonance
+            const thunkOsc = this.audioCtx.createOscillator();
+            const thunkGain = this.audioCtx.createGain();
+
+            thunkOsc.type = 'sine';
+            thunkOsc.frequency.setValueAtTime(isOn ? 350 : 250, now + 0.01);
+            thunkOsc.frequency.exponentialRampToValueAtTime(80, now + 0.06);
+
+            thunkGain.gain.setValueAtTime(0.3, now + 0.01);
+            thunkGain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+
+            thunkOsc.connect(thunkGain);
+            thunkGain.connect(this.masterGain);
+
+            thunkOsc.start(now + 0.01);
+            thunkOsc.stop(now + 0.06);
         } catch (e) {
-            console.warn("Battery switch sound error:", e);
+            console.warn("Toggle switch sound error:", e);
         }
+    }
+
+    // Backward-compatible alias
+    playBatterySwitchSound(isOn) {
+        this.playToggleSwitchSound(isOn);
     }
 
     // Synthesizes high-pressure fuel pump motor spooling & priming sound
@@ -432,7 +454,7 @@ export class SoundManager {
 
             this.rainFilterNode = this.audioCtx.createBiquadFilter();
             this.rainFilterNode.type = 'bandpass';
-            this.rainFilterNode.frequency.setValueAtTime(1400, now);
+            this.rainFilterNode.frequency.setValueAtTime(1400,now);
 
             this.rainGainNode = this.audioCtx.createGain();
             this.rainGainNode.gain.setValueAtTime(0.001, now);
