@@ -28,6 +28,18 @@ export class SoundManager {
         this.rainGainNode = null;
         this.isRainSoundPlaying = false;
 
+        // --- Wind Sound Nodes (Howling Wind / Gale) ---
+        this.windNoiseNode = null;
+        this.windFilterNode = null;
+        this.windGainNode = null;
+        this.windLfo = null;
+        this.windLfoGain = null;
+        this.isWindSoundPlaying = false;
+
+        // --- Thunder Timing State ---
+        this.lastThunderTime = 0;
+        this.nextThunderInterval = 15000; // 15 seconds initial
+
         // --- Procedural Water Spray Sound Nodes ---
         this.sprayNoiseNode = null;
         this.sprayFilterNode = null;
@@ -65,6 +77,12 @@ export class SoundManager {
         this.isMuted = mute;
         if (mute && this.isSpraySoundPlaying) {
             this.stopSpraySound();
+        }
+        if (mute && this.isWindSoundPlaying) {
+            this.stopWindSound();
+        }
+        if (mute && this.isRainSoundPlaying) {
+            this.stopRainSound();
         }
         if (this.audioCtx) {
             if (this.isMuted) {
@@ -155,7 +173,6 @@ export class SoundManager {
             pumpOsc.frequency.setValueAtTime(650, now + 0.4);
             pumpOsc.frequency.linearRampToValueAtTime(600, now + duration);
 
-            // Volume reduced by 50% (peak gain scaled from 0.2 to 0.1)
             pumpGain.gain.setValueAtTime(0.005, now);
             pumpGain.gain.linearRampToValueAtTime(0.1, now + 0.1);
             pumpGain.gain.setValueAtTime(0.1, now + duration - 0.2);
@@ -455,10 +472,10 @@ export class SoundManager {
 
             this.rainFilterNode = this.audioCtx.createBiquadFilter();
             this.rainFilterNode.type = 'bandpass';
-            this.rainFilterNode.frequency.setValueAtTime(1400,now);
+            this.rainFilterNode.frequency.setValueAtTime(1400, now);
 
             this.rainGainNode = this.audioCtx.createGain();
-            this.rainGainNode.gain.setValueAtTime(0.001, now);
+            this.rainGainNode.gain.setValueAtTime(0.0001, now);
             this.rainGainNode.gain.linearRampToValueAtTime(0.04, now + 1.0);
 
             this.rainNoiseNode.connect(this.rainFilterNode);
@@ -477,7 +494,7 @@ export class SoundManager {
         try {
             const now = this.audioCtx.currentTime;
             if (this.rainGainNode) {
-                this.rainGainNode.gain.linearRampToValueAtTime(0.001, now + 1.0);
+                this.rainGainNode.gain.linearRampToValueAtTime(0.0001, now + 1.0);
             }
             setTimeout(() => {
                 if (this.rainNoiseNode) {
@@ -492,12 +509,208 @@ export class SoundManager {
         }
     }
 
+    // --- Howling Wind Sound Methods (Gale / Storm Wind) ---
+    startWindSound(isStorm = false) {
+        if (this.isWindSoundPlaying || !this.audioCtx || this.isMuted) return;
+        try {
+            const now = this.audioCtx.currentTime;
+            const bufferSize = this.audioCtx.sampleRate * 3;
+            const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+
+            this.windNoiseNode = this.audioCtx.createBufferSource();
+            this.windNoiseNode.buffer = buffer;
+            this.windNoiseNode.loop = true;
+
+            // Bandpass filter for wind howling frequency resonance
+            this.windFilterNode = this.audioCtx.createBiquadFilter();
+            this.windFilterNode.type = 'bandpass';
+            this.windFilterNode.frequency.setValueAtTime(320, now);
+            this.windFilterNode.Q.setValueAtTime(3.5, now);
+
+            // LFO to modulate filter frequency for howling/gusting effect
+            this.windLfo = this.audioCtx.createOscillator();
+            this.windLfo.type = 'sine';
+            this.windLfo.frequency.setValueAtTime(0.25, now); // Slow gust cycle
+
+            this.windLfoGain = this.audioCtx.createGain();
+            this.windLfoGain.gain.setValueAtTime(isStorm ? 180.0 : 90.0, now);
+
+            this.windLfo.connect(this.windLfoGain);
+            this.windLfoGain.connect(this.windFilterNode.frequency);
+
+            this.windGainNode = this.audioCtx.createGain();
+            const targetVolume = isStorm ? 0.22 : 0.08;
+            this.windGainNode.gain.setValueAtTime(0.0001, now);
+            this.windGainNode.gain.linearRampToValueAtTime(targetVolume, now + 1.5);
+
+            this.windNoiseNode.connect(this.windFilterNode);
+            this.windFilterNode.connect(this.windGainNode);
+            this.windGainNode.connect(this.masterGain);
+
+            this.windLfo.start(now);
+            this.windNoiseNode.start(now);
+            this.isWindSoundPlaying = true;
+        } catch (e) {
+            console.warn("Wind sound start error:", e);
+        }
+    }
+
+    stopWindSound() {
+        if (!this.isWindSoundPlaying || !this.audioCtx) return;
+        try {
+            const now = this.audioCtx.currentTime;
+            if (this.windGainNode) {
+                this.windGainNode.gain.linearRampToValueAtTime(0.0001, now + 1.0);
+            }
+            setTimeout(() => {
+                if (this.windNoiseNode) {
+                    this.windNoiseNode.stop();
+                    this.windNoiseNode.disconnect();
+                    this.windNoiseNode = null;
+                }
+                if (this.windLfo) {
+                    this.windLfo.stop();
+                    this.windLfo.disconnect();
+                    this.windLfo = null;
+                }
+                this.isWindSoundPlaying = false;
+            }, 1000);
+        } catch (e) {
+            this.isWindSoundPlaying = false;
+        }
+    }
+
+    // --- Procedural Thunder Sound Effect (Coincides with Storm Lightning) ---
+    playThunderSound() {
+        try {
+            this.ensureContextRunning();
+            if (!this.audioCtx || this.isMuted) return;
+
+            const now = this.audioCtx.currentTime;
+            const duration = 4.5;
+
+            // 1. Rumble Noise Buffer
+            const bufferSize = this.audioCtx.sampleRate * duration;
+            const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+
+            const noise = this.audioCtx.createBufferSource();
+            noise.buffer = buffer;
+
+            const filter = this.audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(350, now);
+            filter.frequency.exponentialRampToValueAtTime(45, now + duration);
+
+            const gain = this.audioCtx.createGain();
+            gain.gain.setValueAtTime(0.55, now);
+            gain.gain.setValueAtTime(0.65, now + 0.4); // Initial thunder crack rumble peak
+            gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(this.masterGain);
+
+            // 2. Sub-bass Oscillator for Deep Cinematic Impact
+            const subOsc = this.audioCtx.createOscillator();
+            const subGain = this.audioCtx.createGain();
+
+            subOsc.type = 'triangle';
+            subOsc.frequency.setValueAtTime(70, now);
+            subOsc.frequency.exponentialRampToValueAtTime(28, now + duration);
+
+            subGain.gain.setValueAtTime(0.4, now);
+            subGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+            subOsc.connect(subGain);
+            subGain.connect(this.masterGain);
+
+            noise.start(now);
+            noise.stop(now + duration);
+            subOsc.start(now);
+            subOsc.stop(now + duration);
+        } catch (e) {
+            console.warn("Thunder sound error:", e);
+        }
+    }
+
     updateRainAudio(weatherData) {
-        const isRaining = weatherData && (weatherData.weatherType === 'rain' || weatherData.weatherType === 'storm');
-        if (isRaining && !this.isRainSoundPlaying) {
-            this.startRainSound();
-        } else if (!isRaining && this.isRainSoundPlaying) {
-            this.stopRainSound();
+        this.updateWeatherAudio(weatherData);
+    }
+
+    updateWeatherAudio(weatherData) {
+        if (!this.audioCtx || this.isMuted) return;
+        const now = this.audioCtx.currentTime;
+        const weatherType = weatherData ? weatherData.weatherType : 'fine';
+        const effects = weatherData ? weatherData.effects : null;
+        const rainOpacity = effects ? (effects.rainOpacity || 0) : (weatherType === 'fine' ? 0 : 0.5);
+        const isStorm = weatherType === 'storm';
+
+        // --- Seamless Rain Sound Crossfade ---
+        const targetRainGain = (rainOpacity / 0.55) * 0.045;
+        if (targetRainGain > 0.0005) {
+            if (!this.isRainSoundPlaying) {
+                this.startRainSound();
+            }
+            if (this.rainGainNode) {
+                this.rainGainNode.gain.setTargetAtTime(targetRainGain, now, 0.3);
+            }
+        } else {
+            if (this.isRainSoundPlaying) {
+                if (this.rainGainNode) {
+                    this.rainGainNode.gain.setTargetAtTime(0.0001, now, 0.5);
+                }
+                setTimeout(() => {
+                    if (this.rainGainNode && this.rainGainNode.gain.value < 0.001 && this.isRainSoundPlaying) {
+                        this.stopRainSound();
+                    }
+                }, 1000);
+            }
+        }
+
+        // --- Seamless Wind Sound Crossfade ---
+        const windSpeed = weatherData && weatherData.wind ? weatherData.wind.length() : 0.5;
+        const targetWindGain = Math.min(0.24, Math.max(0.006, windSpeed * 0.038));
+        const targetWindFreq = Math.min(480, Math.max(180, 180 + windSpeed * 35));
+
+        if (windSpeed > 0.4 || rainOpacity > 0.05) {
+            if (!this.isWindSoundPlaying) {
+                this.startWindSound(isStorm);
+            }
+            if (this.windGainNode) {
+                this.windGainNode.gain.setTargetAtTime(targetWindGain, now, 0.4);
+            }
+            if (this.windFilterNode) {
+                this.windFilterNode.frequency.setTargetAtTime(targetWindFreq, now, 0.4);
+            }
+        } else {
+            if (this.isWindSoundPlaying) {
+                if (this.windGainNode) {
+                    this.windGainNode.gain.setTargetAtTime(0.0001, now, 0.5);
+                }
+            }
+        }
+
+        // Periodic Thunder timing during Storm weather or high storm intensity blend
+        if (isStorm || (effects && effects.sunIntensity < 0.5 && rainOpacity > 0.4)) {
+            const nowMs = Date.now();
+            if (this.lastThunderTime === 0) {
+                this.lastThunderTime = nowMs;
+                this.nextThunderInterval = 10000 + Math.random() * 12000;
+            } else if (nowMs - this.lastThunderTime >= this.nextThunderInterval) {
+                this.playThunderSound();
+                this.lastThunderTime = nowMs;
+                this.nextThunderInterval = 14000 + Math.random() * 18000; // 14 to 32 seconds between rumbles
+            }
+        } else {
+            this.lastThunderTime = 0;
         }
     }
 }

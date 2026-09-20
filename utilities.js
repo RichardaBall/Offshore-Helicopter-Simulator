@@ -1,202 +1,144 @@
-import * as THREE from 'three';
-import { TransformControls } from 'three/addons/controls/TransformControls.js';
+export class DeveloperTool {
+    constructor(weatherSystem) {
+        this.weatherSystem = weatherSystem;
+        this.isVisible = false;
+        this.container = null;
 
-export class LightPlacer {
-    constructor(scene, camera, renderer, targetModel, modelName = 'Target Model') {
-        this.scene = scene;
-        this.camera = camera;
-        this.renderer = renderer;
-        this.targetModel = targetModel;
-        this.modelName = modelName;
-
-        this.placedLights = [];
-        this.colors = ['green', 'red', 'white'];
-        this.colorIndex = 0;
-        this.currentColor = this.colors[this.colorIndex];
-
-        this.currentLight = null;
-        this.currentMarker = null;
-        this.transformControls = null;
-
-        this.setupTransformControls();
-        this.setupUI();
+        this.initUI();
         this.initListeners();
     }
 
-    setupTransformControls() {
-        this.transformControls = new TransformControls(this.camera, this.renderer.domElement);
-        this.transformControls.size = 1.0;
-        this.scene.add(this.transformControls);
-    }
-
-    setupUI() {
-        const div = document.createElement('div');
-        div.id = 'light-placer-hud';
-        div.style.position = 'fixed';
-        div.style.top = '10px';
-        div.style.left = '10px';
-        div.style.background = 'rgba(0, 0, 0, 0.85)';
-        div.style.color = '#fff';
-        div.style.padding = '14px';
-        div.style.fontFamily = 'monospace';
-        div.style.fontSize = '13px';
-        div.style.zIndex = '1000';
-        div.style.borderRadius = '6px';
-        div.style.border = '1px solid #444';
-        div.innerHTML = `
-            <b>${this.modelName} Light Placer (Gizmo Mode)</b><br>
-            Active Color: <span id="lp-color" style="color: #00ff00; font-weight: bold;">GREEN</span><br>
-            Status: <span id="lp-status" style="color: #ffaa00;">Ready to Spawn</span><br>
-            Saved Lights: <span id="lp-count">0</span><br>
-            <hr style="border: 0; border-top: 1px solid #555; margin: 8px 0;">
-            <b>[C]</b> Cycle Color (Green / Red / White)<br>
-            <b>[B]</b> Spawn New Light<br>
-            <b>[Enter]</b> Lock & Save Current Light<br>
-            <b>[Z]</b> Undo / Cancel Current<br>
-            <b>[P]</b> Print Coordinates (Console)
+    initUI() {
+        this.container = document.createElement('div');
+        this.container.id = 'developer-tool-ui';
+        this.container.style.cssText = `
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 280px;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            border-radius: 8px;
+            padding: 16px;
+            color: #f8fafc;
+            font-family: monospace;
+            font-size: 13px;
+            z-index: 10000;
+            display: none;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            user-select: none;
         `;
-        document.body.appendChild(div);
-        this.hudColorEl = document.getElementById('lp-color');
-        this.hudStatusEl = document.getElementById('lp-status');
-        this.hudCountEl = document.getElementById('lp-count');
+
+        this.container.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
+                <span style="font-weight: bold; color: #38bdf8; letter-spacing: 1px;">DEVELOPER TOOL [T]</span>
+                <button id="dev-tool-close" style="background: transparent; border: none; color: #94a3b8; cursor: pointer; font-size: 16px; font-weight: bold;">&times;</button>
+            </div>
+
+            <div style="margin-bottom: 14px;">
+                <label style="display: block; color: #94a3b8; margin-bottom: 6px; font-size: 11px; text-transform: uppercase;">Time of Day</label>
+                <div style="display: flex; gap: 8px;">
+                    <button id="dev-btn-day" style="flex: 1; background: #0284c7; border: none; color: white; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: background 0.2s;">Day</button>
+                    <button id="dev-btn-night" style="flex: 1; background: #334155; border: none; color: white; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: background 0.2s;">Night</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 14px;">
+                <label style="display: block; color: #94a3b8; margin-bottom: 6px; font-size: 11px; text-transform: uppercase;">Weather Condition</label>
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <button id="dev-btn-fine" style="background: #0ea5e9; border: none; color: white; padding: 6px 10px; border-radius: 4px; cursor: pointer; text-align: left; font-weight: bold;">☀️ Fine Weather</button>
+                    <button id="dev-btn-rain" style="background: #334155; border: none; color: white; padding: 6px 10px; border-radius: 4px; cursor: pointer; text-align: left; font-weight: bold;">🌧️ Rain</button>
+                    <button id="dev-btn-storm" style="background: #334155; border: none; color: white; padding: 6px 10px; border-radius: 4px; cursor: pointer; text-align: left; font-weight: bold;">⚡ Storm</button>
+                </div>
+            </div>
+
+            <div style="font-size: 10px; color: #64748b; text-align: center; margin-top: 8px;">
+                Press [T] to toggle menu
+            </div>
+        `;
+
+        document.body.appendChild(this.container);
+
+        // Event listeners for UI controls
+        document.getElementById('dev-tool-close').addEventListener('click', () => this.toggle());
+        
+        document.getElementById('dev-btn-day').addEventListener('click', () => {
+            if (this.weatherSystem) {
+                // Set dayNightTimer to 25% of cycle (Sun at peak noon)
+                this.weatherSystem.dayNightTimer = 0.25 * this.weatherSystem.dayCycleDuration;
+                this.updateActiveStates();
+            }
+        });
+
+        document.getElementById('dev-btn-night').addEventListener('click', () => {
+            if (this.weatherSystem) {
+                // Set dayNightTimer to 75% of cycle (Sun at lowest midnight)
+                this.weatherSystem.dayNightTimer = 0.75 * this.weatherSystem.dayCycleDuration;
+                this.updateActiveStates();
+            }
+        });
+
+        document.getElementById('dev-btn-fine').addEventListener('click', () => {
+            if (this.weatherSystem) {
+                this.weatherSystem.setWeather('fine');
+                this.updateActiveStates();
+            }
+        });
+
+        document.getElementById('dev-btn-rain').addEventListener('click', () => {
+            if (this.weatherSystem) {
+                this.weatherSystem.setWeather('rain');
+                this.updateActiveStates();
+            }
+        });
+
+        document.getElementById('dev-btn-storm').addEventListener('click', () => {
+            if (this.weatherSystem) {
+                this.weatherSystem.setWeather('storm');
+                this.updateActiveStates();
+            }
+        });
     }
 
     initListeners() {
-        this.boundOnKeyDown = (e) => this.onKeyDown(e);
-        window.addEventListener('keydown', this.boundOnKeyDown);
-    }
-
-    onKeyDown(e) {
-        if (e.key.toLowerCase() === 'c') {
-            this.colorIndex = (this.colorIndex + 1) % this.colors.length;
-            this.currentColor = this.colors[this.colorIndex];
-            
-            if (this.currentColor === 'green') {
-                this.hudColorEl.innerText = 'GREEN';
-                this.hudColorEl.style.color = '#00ff00';
-            } else if (this.currentColor === 'red') {
-                this.hudColorEl.innerText = 'RED';
-                this.hudColorEl.style.color = '#ff0000';
-            } else if (this.currentColor === 'white') {
-                this.hudColorEl.innerText = 'WHITE';
-                this.hudColorEl.style.color = '#ffffff';
+        window.addEventListener('keydown', (event) => {
+            if (event.code === 'KeyT' && !event.ctrlKey && !event.altKey && !event.metaKey) {
+                if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+                this.toggle();
             }
-        } else if (e.code === 'KeyB') {
-            this.spawnLight();
-        } else if (e.code === 'Enter') {
-            this.confirmLight();
-        } else if (e.key.toLowerCase() === 'z') {
-            this.undoLast();
-        } else if (e.key.toLowerCase() === 'p') {
-            this.printCoordinates();
+        });
+    }
+
+    toggle() {
+        this.isVisible = !this.isVisible;
+        this.container.style.display = this.isVisible ? 'block' : 'none';
+        if (this.isVisible) {
+            this.updateActiveStates();
         }
     }
 
-    spawnLight() {
-        if (this.currentLight) {
-            alert("Please lock/save the current light first by pressing [Enter]!");
-            return;
+    updateActiveStates() {
+        if (!this.weatherSystem) return;
+
+        const cycleProgress = this.weatherSystem.dayNightTimer / this.weatherSystem.dayCycleDuration;
+        const sunAngle = cycleProgress * Math.PI * 2;
+        const sunY = Math.sin(sunAngle) * 400;
+        const isDay = sunY >= -20;
+
+        const btnDay = document.getElementById('dev-btn-day');
+        const btnNight = document.getElementById('dev-btn-night');
+        if (btnDay && btnNight) {
+            btnDay.style.background = isDay ? '#0284c7' : '#334155';
+            btnNight.style.background = !isDay ? '#0284c7' : '#334155';
         }
 
-        let colorHex = 0x00ff00;
-        if (this.currentColor === 'red') colorHex = 0xff0000;
-        if (this.currentColor === 'white') colorHex = 0xffffff;
+        const weather = this.weatherSystem.currentWeather;
+        const btnFine = document.getElementById('dev-btn-fine');
+        const btnRain = document.getElementById('dev-btn-rain');
+        const btnStorm = document.getElementById('dev-btn-storm');
 
-        const geometry = new THREE.SphereGeometry(0.35, 16, 16);
-        const material = new THREE.MeshBasicMaterial({ color: colorHex });
-        this.currentMarker = new THREE.Mesh(geometry, material);
-        
-        // Start near model origin/center
-        this.currentMarker.position.set(0, 5, 0);
-
-        this.currentLight = new THREE.PointLight(colorHex, 2.0, 10);
-        this.currentMarker.add(this.currentLight);
-
-        // Parent directly to the target model so it stays attached permanently!
-        this.targetModel.add(this.currentMarker);
-
-        // Attach coordinate gizmo arrows
-        this.transformControls.attach(this.currentMarker);
-
-        this.hudStatusEl.innerText = `Editing (${this.currentColor.toUpperCase()}) - Drag Arrows`;
-        this.hudStatusEl.style.color = '#00ff00';
-        console.log(`Spawned new ${this.currentColor} light. Use gizmo arrows to position, then press [Enter] to lock.`);
-    }
-
-    confirmLight() {
-        if (!this.currentLight || !this.currentMarker) {
-            alert("No active light to lock! Press [B] to spawn one first.");
-            return;
-        }
-
-        // Detach gizmo
-        this.transformControls.detach();
-
-        const localPos = this.currentMarker.position.clone();
-
-        const record = {
-            color: this.currentColor,
-            position: {
-                x: Number(localPos.x.toFixed(3)),
-                y: Number(localPos.y.toFixed(3)),
-                z: Number(localPos.z.toFixed(3))
-            },
-            mesh: this.currentMarker,
-            light: this.currentLight
-        };
-
-        this.placedLights.push(record);
-
-        // Clear current pointers so a new one can be spawned
-        this.currentLight = null;
-        this.currentMarker = null;
-
-        this.hudStatusEl.innerText = 'Saved! Press [B] for next';
-        this.hudStatusEl.style.color = '#ffaa00';
-        this.hudCountEl.innerText = this.placedLights.length;
-
-        console.log("Light locked and saved in model-local space:", record.position);
-    }
-
-    undoLast() {
-        if (this.currentLight) {
-            // Cancel current active light being edited
-            this.transformControls.detach();
-            this.targetModel.remove(this.currentMarker);
-            this.currentMarker.geometry.dispose();
-            this.currentMarker.material.dispose();
-            this.currentLight = null;
-            this.currentMarker = null;
-            this.hudStatusEl.innerText = 'Cancelled current light';
-            this.hudStatusEl.style.color = '#ffaa00';
-            console.log("Cancelled active light editing.");
-            return;
-        }
-
-        if (this.placedLights.length > 0) {
-            const last = this.placedLights.pop();
-            this.targetModel.remove(last.mesh);
-            last.mesh.geometry.dispose();
-            last.mesh.material.dispose();
-            this.hudCountEl.innerText = this.placedLights.length;
-            this.hudStatusEl.innerText = 'Undone last saved light';
-            console.log("Undone last saved light.");
-        }
-    }
-
-    printCoordinates() {
-        console.log(`=== ${this.modelName.toUpperCase()} LIGHTS COORDINATES (LOCAL JSON) ===`);
-        console.log(JSON.stringify(this.placedLights.map(l => ({ color: l.color, position: l.position })), null, 2));
-        alert("Coordinates successfully printed to your browser console (F12)! Copy and paste them back here.");
-    }
-
-    dispose() {
-        window.removeEventListener('keydown', this.boundOnKeyDown);
-        if (this.transformControls) {
-            this.transformControls.dispose();
-            this.scene.remove(this.transformControls);
-        }
-        const hud = document.getElementById('light-placer-hud');
-        if (hud) hud.remove();
+        if (btnFine) btnFine.style.background = weather === 'fine' ? '#0ea5e9' : '#334155';
+        if (btnRain) btnRain.style.background = weather === 'rain' ? '#0ea5e9' : '#334155';
+        if (btnStorm) btnStorm.style.background = weather === 'storm' ? '#0ea5e9' : '#334155';
     }
 }

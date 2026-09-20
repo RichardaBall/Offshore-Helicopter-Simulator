@@ -424,8 +424,8 @@ export class HelicopterPlayer {
 
         if (weatherData && weatherData.wind && !isOnGround) {
             const windImpactFactor = (this.baselineMassKg / currentMass) * delta;
-            this.model.position.x += weatherData.wind.x * windImpactFactor * 0.4;
-            this.model.position.z += weatherData.wind.z * windImpactFactor * 0.4;
+            this.model.position.x += weatherData.wind.x * windImpactFactor * 3.0;
+            this.model.position.z += weatherData.wind.z * windImpactFactor * 3.0;
         }
 
         let newY = this.model.position.y + (this.currentAltitudeSpeed * delta);

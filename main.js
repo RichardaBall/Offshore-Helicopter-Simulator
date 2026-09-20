@@ -15,6 +15,7 @@ import { WaterSystem } from './waterSystem.js';
 import { SirenSystem } from './sirenSystem.js';
 import { RotorWashSystem } from './rotorWashSystem.js';
 import { HelipadDebrisSystem } from './helipadDebrisSystem.js';
+import { DeveloperTool } from './utilities.js';
 
 const { scene, camera, renderer, water, sunLight, ambientLight } = setupScene();
 const weatherSystem = new WeatherSystem();
@@ -26,6 +27,7 @@ const waterSystem = new WaterSystem(scene);
 const rotorWashSystem = new RotorWashSystem(scene);
 const helipadDebrisSystem = new HelipadDebrisSystem(scene);
 const sirenSystem = new SirenSystem(scene, null);
+const developerTool = new DeveloperTool(weatherSystem);
 
 const clock = new THREE.Clock();
 

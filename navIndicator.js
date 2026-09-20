@@ -16,12 +16,8 @@ export class NavIndicator {
         this.ringOD = config.ringOD !== undefined ? config.ringOD : 0.75;
         this.arrowLength = config.arrowLength !== undefined ? config.arrowLength : 0.6;
 
-        this.pointerMaterial = new THREE.MeshStandardMaterial({
-            color: 0xffb703,
-            emissive: 0xffd000,
-            emissiveIntensity: 3.0,
-            roughness: 0.1,
-            metalness: 0.1,
+        this.pointerMaterial = new THREE.MeshBasicMaterial({
+            color: 0xffd000,
             side: THREE.DoubleSide
         });
 
