@@ -14,6 +14,7 @@ import { LiferaftManager } from './liferaft.js';
 import { WaterSystem } from './waterSystem.js';
 import { SirenSystem } from './sirenSystem.js';
 import { RotorWashSystem } from './rotorWashSystem.js';
+import { HelipadDebrisSystem } from './helipadDebrisSystem.js';
 
 const { scene, camera, renderer, water, sunLight, ambientLight } = setupScene();
 const weatherSystem = new WeatherSystem();
@@ -24,6 +25,7 @@ const windFarm = new WindFarm(scene);
 const liferaftManager = new LiferaftManager(scene);
 const waterSystem = new WaterSystem(scene);
 const rotorWashSystem = new RotorWashSystem(scene);
+const helipadDebrisSystem = new HelipadDebrisSystem(scene);
 const sirenSystem = new SirenSystem(scene, null);
 
 const clock = new THREE.Clock();
@@ -229,6 +231,10 @@ function animate() {
         rotorWashSystem.update(delta, helicopterPlayer);
     }
 
+    if (helipadDebrisSystem && helicopterPlayer) {
+        helipadDebrisSystem.update(delta, helicopterPlayer);
+    }
+
     if (helicopterPlayer && helicopterPlayer.model) {
         helicopterPlayer.update(delta, inputManager ? inputManager.keys : {}, weatherData);
         
@@ -260,7 +266,7 @@ function animate() {
             redLight.intensity = electricalActive ? 2.5 : 0.0;
             greenLight.intensity = electricalActive ? 2.5 : 0.0;
             if (redBulb) redBulb.visible = electricalActive;
-            if (greenBulb) greenBulb.visible = electricalActive;
+            if (greenBulb) greenBulb.visible = greenBulb.visible = electricalActive;
 
             landingLight.intensity = (electricalActive && inputManager && inputManager.landingLightOn) ? 18.0 : 0.0;
             cockpitLight.intensity = electricalActive ? 3.5 : 0.0;
