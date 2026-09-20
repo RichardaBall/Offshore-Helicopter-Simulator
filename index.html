@@ -31,22 +31,39 @@
             opacity: 1.0;
             transform: scale(1.1);
         }
-        /* Loading Screen Overlay */
+        /* Loading Screen Overlay with Background Image */
         #loading-screen {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: radial-gradient(circle at center, #111827 0%, #030712 100%);
+            background: url('loading-bg.jpg') no-repeat center center fixed;
+            background-size: cover;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 9999;
             transition: opacity 0.6s ease-out;
-            color: #38bdf8;
+            color: #ffffff;
             font-family: monospace;
+        }
+        /* Optional dark overlay to make text/progress bar stand out against the background */
+        #loading-screen::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 1;
+        }
+        /* Ensure loading elements sit above the dark overlay */
+        #loading-screen > * {
+            position: relative;
+            z-index: 2;
         }
         .loading-title {
             font-size: 72px;
@@ -54,38 +71,40 @@
             letter-spacing: 4px;
             margin-bottom: 12px;
             text-transform: uppercase;
-            text-shadow: 0 0 20px rgba(56, 189, 248, 0.6);
+            text-shadow: 0 0 20px rgba(0, 0, 0, 0.8), 0 0 10px rgba(255, 255, 255, 0.5);
             text-align: center;
         }
         .loading-subtitle {
             font-size: 36px;
-            color: #9ca3af;
+            color: #e5e7eb;
             letter-spacing: 2px;
             margin-bottom: 40px;
             text-transform: uppercase;
+            text-shadow: 0 0 15px rgba(0, 0, 0, 0.8);
             text-align: center;
         }
         .progress-bar-container {
             width: 320px;
             height: 6px;
-            background: #1f2937;
+            background: rgba(31, 41, 55, 0.8);
             border-radius: 3px;
             overflow: hidden;
-            border: 1px solid #374151;
+            border: 1px solid rgba(255, 255, 255, 0.3);
             box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
         }
         #loading-progress {
             width: 0%;
             height: 100%;
-            background: linear-gradient(90deg, #0284c7, #38bdf8);
+            background: linear-gradient(90deg, #9ca3af, #ffffff);
             transition: width 0.2s ease-out;
-            box-shadow: 0 0 10px #38bdf8;
+            box-shadow: 0 0 10px #ffffff;
         }
         #loading-status {
             margin-top: 15px;
             font-size: 13px;
-            color: #cbd5e1;
+            color: #f3f4f6;
             letter-spacing: 1px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
         }
     </style>
     <!-- Import map for Three.js and addons -->
