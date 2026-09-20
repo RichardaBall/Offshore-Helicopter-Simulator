@@ -69,7 +69,7 @@ export class Kneeboard {
             overflow: hidden;
         `;
 
-        // Page 1: Controls Reference (Original format + aligned notes)
+        // Page 1: Controls Reference
         this.page1El = document.createElement('div');
         this.page1El.style.cssText = this.getPageStyle(0);
         this.page1El.innerHTML = `
@@ -120,7 +120,7 @@ export class Kneeboard {
             </div>
         `;
 
-        // Page 2: Flight Checklist
+        // Page 2: Flight Checklist (Updated with Landing light AS REQ)
         this.page2El = document.createElement('div');
         this.page2El.style.cssText = this.getPageStyle(1);
         this.page2El.innerHTML = `
@@ -150,6 +150,7 @@ export class Kneeboard {
             <div style="margin-bottom: 6px; font-size: 10px;">
                 <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">4. BEFORE LANDING</div>
                 <div style="display: flex; justify-content: space-between;"><span>• Landing Gear:</span><strong>DOWN [G]</strong></div>
+                <div style="display: flex; justify-content: space-between;"><span>• Landing Light:</span><strong>AS REQ [L]</strong></div>
             </div>
 
             <div style="font-size: 10px;">
