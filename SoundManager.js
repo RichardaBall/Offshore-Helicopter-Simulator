@@ -425,9 +425,9 @@ export class SoundManager {
             const now = this.audioCtx.currentTime;
             const speedFactor = Math.abs(moveSpeed) / 75.0;
 
-            const targetTurbineFreq = THREEMathClamp(400 + (enginePower * 1400) + (speedFactor * 400), 300, 2400);
-            const targetFilterFreq = THREEMathClamp(80 + (enginePower * 320) + (speedFactor * 150), 80, 500);
-            const targetRotorFreq = THREEMathClamp(3.5 + (enginePower * 2.0) + (speedFactor * 0.8), 3.0, 6.2);
+            const targetTurbineFreq = Math.max(300, Math.min(2400, 400 + (enginePower * 1400) + (speedFactor * 400)));
+            const targetFilterFreq = Math.max(80, Math.min(500, 80 + (enginePower * 320) + (speedFactor * 150)));
+            const targetRotorFreq = Math.max(3.0, Math.min(6.2, 3.5 + (enginePower * 2.0) + (speedFactor * 0.8)));
 
             this.turbineOsc.frequency.setTargetAtTime(targetTurbineFreq, now, 0.1);
             this.filterNode.frequency.setTargetAtTime(targetFilterFreq, now, 0.1);
@@ -499,8 +499,4 @@ export class SoundManager {
             this.stopRainSound();
         }
     }
-}
-
-function THREEMathClamp(value, min, max) {
-    return Math.max(min, Math.min(max, value));
 }

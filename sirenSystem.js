@@ -6,14 +6,11 @@ export class SirenSystem {
         this.oilRigGroup = oilRigGroup;
         this.sirens = [];
 
-        // Your final tuned position and rotation coordinates
-        this.currentPos = new THREE.Vector3(-6.50, 11.40, -15.00);
-        this.currentRot = new THREE.Vector3(0, 0.26, 0);
-        this.stepSize = 0.5;
-        this.placerActive = false;
+        // Final tuned position and rotation coordinates
+        const position = new THREE.Vector3(-6.50, 11.40, -15.00);
+        const rotation = new THREE.Vector3(0, 0.26, 0);
 
-        this.initSiren(this.currentPos, this.currentRot);
-        this.initPlacerControls();
+        this.initSiren(position, rotation);
     }
 
     initSiren(position, rotation) {
@@ -126,88 +123,13 @@ export class SirenSystem {
             spotLight: this.spotLight,
             mechanism: this.internalMechanism
         });
-
-        this.logConfiguration("INITIALIZED WITH FINAL LOCKED COORDS");
-    }
-
-    // --- 5. Interactive Keyboard Placer ---
-    initPlacerControls() {
-        window.addEventListener('keydown', (e) => {
-            if (e.code === 'KeyO' || e.key === 'o' || e.key === 'O') {
-                this.placerActive = !this.placerActive;
-                console.log(`%c [SIREN PLACER] Mode Active: ${this.placerActive} `, 'background: #007acc; color: #fff; padding: 2px 6px; font-weight: bold;');
-                return;
-            }
-
-            if (!this.placerActive) return;
-
-            let modified = false;
-            this.stepSize = e.shiftKey ? 0.1 : 0.5;
-
-            if (e.code === 'ArrowLeft' || e.key === 'ArrowLeft' || e.code === 'KeyJ' || e.key === 'j' || e.key === 'J') { 
-                this.currentPos.x -= this.stepSize; modified = true; 
-            }
-            if (e.code === 'ArrowRight' || e.key === 'ArrowRight' || e.code === 'KeyL' || e.key === 'l' || e.key === 'L') { 
-                this.currentPos.x += this.stepSize; modified = true; 
-            }
-            if (e.code === 'ArrowUp' || e.key === 'ArrowUp' || e.code === 'KeyU' || e.key === 'u' || e.key === 'U') { 
-                this.currentPos.z -= this.stepSize; modified = true; 
-            }
-            if (e.code === 'ArrowDown' || e.key === 'ArrowDown' || e.code === 'KeyK' || e.key === 'k' || e.key === 'K') { 
-                this.currentPos.z += this.stepSize; modified = true; 
-            }
-            if (e.code === 'KeyR' || e.key === 'r' || e.key === 'R') { 
-                this.currentPos.y += this.stepSize; modified = true; 
-            }
-            if (e.code === 'KeyF' || e.key === 'f' || e.key === 'F') { 
-                this.currentPos.y -= this.stepSize; modified = true; 
-            }
-            if (e.code === 'KeyZ' || e.key === 'z' || e.key === 'Z') { 
-                this.currentRot.y -= THREE.MathUtils.degToRad(15); modified = true; 
-            }
-            if (e.code === 'KeyX' || e.key === 'x' || e.key === 'X') { 
-                this.currentRot.y += THREE.MathUtils.degToRad(15); modified = true; 
-            }
-
-            if (modified) {
-                e.preventDefault();
-                if (this.sirenGroup) {
-                    this.sirenGroup.position.copy(this.currentPos);
-                    this.sirenGroup.rotation.set(this.currentRot.x, this.currentRot.y, this.currentRot.z);
-                }
-                this.logConfiguration("UPDATED");
-            }
-
-            if (e.code === 'Enter' || e.code === 'KeyP' || e.key === 'Enter' || e.key === 'p' || e.key === 'P') {
-                this.exportConfiguration();
-            }
-        });
-
-        console.log(`%c [SIREN PLACER] Loaded! Press [O] to toggle. Move: [J]/[L] (X), [U]/[K] (Z), [R]/[F] (Y). Rotate: [Z]/[X]. Shift for fine steps. [P] or [Enter] to export. `, 'background: #28a745; color: #fff; padding: 4px; font-weight: bold;');
-    }
-
-    logConfiguration(status) {
-        console.log(
-            `%c [SIREN CONFIG - ${status}] `, 
-            'background: #333; color: #ffcc00; padding: 2px 4px; font-weight: bold;',
-            `position: { x: ${this.currentPos.x.toFixed(2)}, y: ${this.currentPos.y.toFixed(2)}, z: ${this.currentPos.z.toFixed(2)} }, ` +
-            `rotation: { x: ${this.currentRot.x.toFixed(2)}, y: ${this.currentRot.y.toFixed(2)}, z: ${this.currentRot.z.toFixed(2)} }`
-        );
-    }
-
-    exportConfiguration() {
-        console.log(`\n==================================================`);
-        console.log(`%c [SIREN FINAL EXPORT CODE SNIPPET] `, 'background: #d9534f; color: #fff; padding: 4px; font-weight: bold;');
-        console.log(`const sirenPosition = new THREE.Vector3(${this.currentPos.x.toFixed(2)}, ${this.currentPos.y.toFixed(2)}, ${this.currentPos.z.toFixed(2)});`);
-        console.log(`const sirenRotation = new THREE.Euler(${this.currentRot.y.toFixed(2)});\n`);
-        console.log(`==================================================\n`);
     }
 
     update(delta, windFarm) {
         const emergencyActive = windFarm && windFarm.activeFireIndex !== -1;
 
         this.sirens.forEach(siren => {
-            if (emergencyActive || this.placerActive) {
+            if (emergencyActive) {
                 if (siren.mechanism) {
                     siren.mechanism.rotation.y += delta * 12.0;
                 }
