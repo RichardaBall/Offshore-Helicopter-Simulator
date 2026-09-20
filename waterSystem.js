@@ -3,8 +3,8 @@ import * as THREE from 'three';
 export class WaterSystem {
     constructor(scene) {
         this.scene = scene;
-        this.particlesCount = 4000; 
-        this.splashCount = 2500;    
+        this.particlesCount = 6000; // Increased density for a rich, volumetric drop
+        this.splashCount = 3000;    // Enhanced splash count for surface impact
 
         // --- Falling Shower Stream Setup ---
         this.particleGeometry = new THREE.BufferGeometry();
@@ -39,29 +39,30 @@ export class WaterSystem {
 
         this.splashGeometry.setAttribute('position', new THREE.BufferAttribute(this.splashPositions, 3));
 
-        // Soft feathered radial texture matching the rotor wash style
+        // Soft feathered radial texture tuned for realistic aerated water/foam spray visuals
         const canvas = document.createElement('canvas');
         canvas.width = 64;
         canvas.height = 64;
         const ctx = canvas.getContext('2d');
         const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-        gradient.addColorStop(0, 'rgba(240, 248, 255, 0.65)');
-        gradient.addColorStop(0.4, 'rgba(200, 230, 250, 0.3)');
+        gradient.addColorStop(0, 'rgba(235, 245, 255, 0.85)');
+        gradient.addColorStop(0.3, 'rgba(200, 225, 245, 0.45)');
+        gradient.addColorStop(0.7, 'rgba(175, 210, 240, 0.15)');
         gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, 64, 64);
 
         const texture = new THREE.CanvasTexture(canvas);
 
-        // Shower droplet material (finer, sparser, individual droplets)
+        // Water droplet material (volumetric, soft, aerated spray look)
         this.particleMaterial = new THREE.PointsMaterial({
             color: 0xffffff,
-            size: 5.5,
+            size: 7.0,
             map: texture,
             transparent: true,
             blending: THREE.NormalBlending,
             depthWrite: false,
-            opacity: 0.45
+            opacity: 0.55
         });
 
         this.particleSystem = new THREE.Points(this.particleGeometry, this.particleMaterial);
@@ -71,12 +72,12 @@ export class WaterSystem {
         // Surface splash mist material
         this.splashMaterial = new THREE.PointsMaterial({
             color: 0xffffff,
-            size: 6.0,
+            size: 8.0,
             map: texture,
             transparent: true,
             blending: THREE.NormalBlending,
             depthWrite: false,
-            opacity: 0.5
+            opacity: 0.6
         });
 
         this.splashSystem = new THREE.Points(this.splashGeometry, this.splashMaterial);
@@ -97,18 +98,18 @@ export class WaterSystem {
             const idx = i * 3;
 
             const angle = Math.random() * Math.PI * 2;
-            const radius = Math.random() * 3.5;
+            const radius = Math.random() * 4.5;
 
             splashPos[idx] = x + Math.cos(angle) * radius;
             splashPos[idx + 1] = waterLevel + 0.1;
             splashPos[idx + 2] = z + Math.sin(angle) * radius;
 
-            const outwardSpeed = 3.0 + Math.random() * 6.0;
+            const outwardSpeed = 4.0 + Math.random() * 7.0;
             this.splashVelocities[idx] = Math.cos(angle) * outwardSpeed;
-            this.splashVelocities[idx + 1] = 1.2 + Math.random() * 2.5; 
+            this.splashVelocities[idx + 1] = 1.5 + Math.random() * 3.0; 
             this.splashVelocities[idx + 2] = Math.sin(angle) * outwardSpeed;
 
-            this.splashLifetimes[i] = 0.8 + Math.random() * 0.6;
+            this.splashLifetimes[i] = 0.9 + Math.random() * 0.7;
             this.splashSpawnIndex = (this.splashSpawnIndex + 1) % this.splashCount;
         }
     }
@@ -136,15 +137,15 @@ export class WaterSystem {
                 positions[idx + 1] += this.velocities[idx + 1] * delta;
                 positions[idx + 2] += this.velocities[idx + 2] * delta;
 
-                // Air resistance / slight drift
-                this.velocities[idx] *= 0.95;
-                this.velocities[idx + 2] *= 0.95;
-                this.velocities[idx + 1] -= 9.0 * delta; 
+                // Air resistance / slipstream billow
+                this.velocities[idx] *= 0.93;
+                this.velocities[idx + 2] *= 0.93;
+                this.velocities[idx + 1] -= 9.8 * delta; 
                 this.lifetimes[i] -= delta;
 
                 if (positions[idx + 1] <= waterLevel || this.lifetimes[i] <= 0) {
                     if (positions[idx + 1] <= waterLevel) {
-                        this.triggerSplash(positions[idx], positions[idx + 2], 1);
+                        this.triggerSplash(positions[idx], positions[idx + 2], 2);
                     }
                     positions[idx + 1] = -5000;
                     this.lifetimes[i] = 0;
@@ -160,9 +161,9 @@ export class WaterSystem {
                 splashPos[idx + 1] += this.splashVelocities[idx + 1] * delta;
                 splashPos[idx + 2] += this.splashVelocities[idx + 2] * delta;
 
-                this.splashVelocities[idx] *= 0.90;
-                this.splashVelocities[idx + 2] *= 0.90;
-                this.splashVelocities[idx + 1] -= 4.0 * delta; 
+                this.splashVelocities[idx] *= 0.88;
+                this.splashVelocities[idx + 2] *= 0.88;
+                this.splashVelocities[idx + 1] -= 4.5 * delta; 
 
                 this.splashLifetimes[i] -= delta;
                 if (splashPos[idx + 1] <= waterLevel || this.splashLifetimes[i] <= 0) {
@@ -172,36 +173,36 @@ export class WaterSystem {
             }
         }
 
-        // --- Handle Water Tank Discharge (Shower Style) ---
+        // --- Handle Water Tank Discharge (Realistic Firefighting Drop) ---
         let actuallyDispensing = false;
         if (isDispensing && helicopterPlayer.waterTankKg > 0) {
-            const dischargeRate = 300.0; // Slightly lighter flow rate
+            const dischargeRate = 350.0; 
             const dropAmount = dischargeRate * delta;
             helicopterPlayer.waterTankKg = Math.max(0, helicopterPlayer.waterTankKg - dropAmount);
 
             actuallyDispensing = true;
             
-            // Reduced spawn count per frame (sparse shower pattern instead of dense hose)
-            const spawnBatch = 16; 
+            // Rich batch spawning for volumetric aerated water/foam drop cascade
+            const spawnBatch = 24; 
             for (let b = 0; b < spawnBatch; b++) {
                 const i = this.spawnIndex;
                 const idx = i * 3;
 
-                // Wider showerhead spread ring pattern under the belly
+                // Spreading pattern under belly simulating helicopter belly tank dump
                 const angle = Math.random() * Math.PI * 2;
-                const radius = 0.4 + Math.random() * 1.8;
+                const radius = 0.2 + Math.random() * 2.2;
 
                 positions[idx] = spawnCenter.x + Math.cos(angle) * radius;
                 positions[idx + 1] = spawnCenter.y;
                 positions[idx + 2] = spawnCenter.z + Math.sin(angle) * radius;
 
-                // Gentle vertical drop with minor randomized spray angle
-                const scatter = 1.5;
-                this.velocities[idx] = (Math.random() - 0.5) * scatter - (heliForward.x * 4.0);
-                this.velocities[idx + 1] = -9.0 - Math.random() * 4.0; 
-                this.velocities[idx + 2] = (Math.random() - 0.5) * scatter - (heliForward.z * 4.0);
+                // Aerodynamic slipstream sweep + downward burst
+                const scatter = 2.0;
+                this.velocities[idx] = (Math.random() - 0.5) * scatter - (heliForward.x * 5.0);
+                this.velocities[idx + 1] = -8.0 - Math.random() * 5.0; 
+                this.velocities[idx + 2] = (Math.random() - 0.5) * scatter - (heliForward.z * 5.0);
 
-                this.lifetimes[i] = 3.0; 
+                this.lifetimes[i] = 3.5; 
 
                 this.spawnIndex = (this.spawnIndex + 1) % this.particlesCount;
             }
