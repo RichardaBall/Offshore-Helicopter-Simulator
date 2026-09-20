@@ -1,0 +1,14 @@
+- Fix in game lighting
+- Sounds
+- Collision System
+- Add ability to fly sideways
+
+- Add light to life raft
+- Winch line implement and boats, rescue crew.
+- Fix in game lighting
+- Fix weather and affect on heli
+
+- Scenery objects to improve immersion.
+- Add symbology on screen to show state of systems. Battery, Fuel, Engine, Gear, Landing Light.
+- Multiplayer over the internet
+- Fix the rotor stutter
