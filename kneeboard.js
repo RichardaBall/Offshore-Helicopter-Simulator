@@ -21,14 +21,14 @@ export class Kneeboard {
             position: absolute;
             bottom: 30px;
             left: 30px;
-            width: 270px;
+            width: 350px;
             background: #d8d0b0;
             border: 4px solid #4a4532;
             border-radius: 8px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.6), inset 0 0 40px rgba(0,0,0,0.08);
             font-family: 'Courier New', Courier, monospace;
             color: #222;
-            padding: 12px 15px 12px 15px;
+            padding: 14px 18px 14px 18px;
             display: block;
             z-index: 1000;
             user-select: none;
@@ -42,7 +42,7 @@ export class Kneeboard {
             top: -12px;
             left: 50%;
             transform: translateX(-50%);
-            width: 70px;
+            width: 80px;
             height: 15px;
             background: linear-gradient(to bottom, #a0a0a0, #505050);
             border: 1px solid #333;
@@ -55,10 +55,10 @@ export class Kneeboard {
         const header = document.createElement('div');
         header.style.cssText = `
             font-weight: bold;
-            font-size: 13px;
+            font-size: 14px;
             border-bottom: 2px dashed #6b634b;
-            padding-bottom: 5px;
-            margin-bottom: 8px;
+            padding-bottom: 6px;
+            margin-bottom: 10px;
             text-align: center;
             letter-spacing: 1px;
             color: #1a1a1a;
@@ -70,7 +70,7 @@ export class Kneeboard {
         this.pagesWrapper = document.createElement('div');
         this.pagesWrapper.style.cssText = `
             position: relative;
-            min-height: 350px;
+            min-height: 400px;
             overflow: hidden;
         `;
 
@@ -78,50 +78,45 @@ export class Kneeboard {
         this.page1El = document.createElement('div');
         this.page1El.style.cssText = this.getPageStyle(0);
         this.page1El.innerHTML = `
-            <div style="font-weight: bold; text-align: center; text-decoration: underline; font-size: 11px; margin-bottom: 6px; color: #3a3525; letter-spacing: 0.5px;">CONTROLS</div>
+            <div style="font-weight: bold; text-align: center; text-decoration: underline; font-size: 12px; margin-bottom: 8px; color: #3a3525; letter-spacing: 0.5px;">CONTROLS</div>
 
-            <div style="margin-bottom: 5px; font-size: 9.5px;">
-                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">1. SYSTEMS</div>
+            <div style="margin-bottom: 7px; font-size: 11px;">
+                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 3px;">1. SYSTEMS</div>
                 <div style="display: flex; justify-content: space-between;"><span>Battery Switch:</span><strong>[Q]</strong></div>
                 <div style="display: flex; justify-content: space-between;"><span>Fuel Pump Prime:</span><strong>[F]</strong></div>
                 <div style="display: flex; justify-content: space-between;"><span>Engine Ignition:</span><strong>[E]</strong></div>
             </div>
 
-            <div style="margin-bottom: 5px; font-size: 9.5px;">
-                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">2. FLIGHT CONTROLS</div>
+            <div style="margin-bottom: 7px; font-size: 11px;">
+                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 3px;">2. FLIGHT CONTROLS</div>
                 <div style="display: flex; justify-content: space-between;"><span>Pitch / Roll / Yaw:</span><strong>Arrow Keys</strong></div>
                 <div style="display: flex; justify-content: space-between;"><span>Collective Up/Dn:</span><strong>Shift/Ctrl</strong></div>
                 <div style="display: flex; justify-content: space-between;"><span>Camera Zoom:</span><strong>Mouse Wheel</strong></div>
             </div>
 
-            <div style="margin-bottom: 5px; font-size: 9.5px;">
-                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">3. LIGHTING & GEAR</div>
+            <div style="margin-bottom: 7px; font-size: 11px;">
+                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 3px;">3. LIGHTING & GEAR</div>
                 <div style="display: flex; justify-content: space-between;"><span>Landing Gear:</span><strong>[G]</strong></div>
                 <div style="display: flex; justify-content: space-between;"><span>Landing Light:</span><strong>[L]</strong></div>
             </div>
 
-            <div style="margin-bottom: 5px; font-size: 9.5px;">
-                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">4. FIREFIGHTING & UI</div>
+            <div style="margin-bottom: 7px; font-size: 11px;">
+                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 3px;">4. FIREFIGHTING & UI</div>
                 <div style="display: flex; justify-content: space-between;"><span>Water Spray:</span><strong>Hold [Space]</strong></div>
                 <div style="display: flex; justify-content: space-between;"><span>Toggle Kneeboard:</span><strong>[K]</strong></div>
             </div>
 
-            <div style="font-size: 8.5px; border-top: 1px dashed #6b634b; padding-top: 3px; margin-top: 3px;">
-                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">IN-FLIGHT NOTES:</div>
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    <div>
-                        Fuel Qty<br>
-                        <span style="font-size: 7.5px; color: #555;">(Tail Strobe)</span>
-                    </div>
-                    <div style="text-align: right;">
-                        <strong>White</strong> 50-100%<br>
-                        <strong>Amber</strong> 10-50%<br>
-                        <strong>Red</strong> &lt;10%
+            <div style="font-size: 11px; border-top: 1px dashed #6b634b; padding-top: 5px; margin-top: 5px;">
+                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 4px;">IN-FLIGHT NOTES:</div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <div><strong>Fuel QTY</strong><br><span style="font-size: 10px; color: #4a4532;">(Tail Strobe)</span></div>
+                    <div style="text-align: left;">
+                        <div style="text-align: left;">White (50-100%)</div>
+                        <div style="text-align: left;">Amber (10-50%)</div>
+                        <div style="text-align: left;">Red (&lt;10%)</div>
                     </div>
                 </div>
-                <div style="margin-top: 5px; border-top: 1px dotted #b5ac8c; padding-top: 4px;">
-                    ADF: Small yellow arrow around rotor hub (visible only when station is tuned correctly).
-                </div>
+                <div style="margin-top: 6px;">• ADF: Yellow arrow on rotor hub indicates relative NDB station bearing.</div>
             </div>
         `;
 
@@ -129,37 +124,37 @@ export class Kneeboard {
         this.page2El = document.createElement('div');
         this.page2El.style.cssText = this.getPageStyle(1);
         this.page2El.innerHTML = `
-            <div style="font-weight: bold; text-align: center; text-decoration: underline; font-size: 11px; margin-bottom: 6px; color: #3a3525; letter-spacing: 0.5px;">CHECKLIST</div>
+            <div style="font-weight: bold; text-align: center; text-decoration: underline; font-size: 12px; margin-bottom: 8px; color: #3a3525; letter-spacing: 0.5px;">CHECKLIST</div>
 
-            <div style="margin-bottom: 6px; font-size: 10px;">
-                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">1. PRE-FLIGHT / GROUND</div>
+            <div style="margin-bottom: 7px; font-size: 11px;">
+                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 3px;">1. PRE-FLIGHT / GROUND</div>
                 <div style="display: flex; justify-content: space-between;"><span>• Refuel & Water Fill:</span><strong>[Page 3]</strong></div>
                 <div style="display: flex; justify-content: space-between;"><span>• Fuel OFF:</span><strong>(F)</strong></div>
                 <div style="display: flex; justify-content: space-between;"><span>• Engine OFF:</span><strong>(E)</strong></div>
                 <div style="display: flex; justify-content: space-between;"><span>• Battery Switch OFF:</span><strong>(Q)</strong></div>
             </div>
 
-            <div style="margin-bottom: 6px; font-size: 10px;">
-                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">2. STARTUP</div>
+            <div style="margin-bottom: 7px; font-size: 11px;">
+                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 3px;">2. STARTUP</div>
                 <div style="display: flex; justify-content: space-between;"><span>• Battery Switch:</span><strong>ON [Q]</strong></div>
                 <div style="display: flex; justify-content: space-between;"><span>• Fuel Pump Prime:</span><strong>ON [F]</strong></div>
                 <div style="display: flex; justify-content: space-between;"><span>• Engine Starter:</span><strong>ON [E]</strong></div>
                 <div style="display: flex; justify-content: space-between;"><span>• Nav Radio Tuned:</span><strong>VERIFY [N]</strong></div>
             </div>
 
-            <div style="margin-bottom: 6px; font-size: 10px;">
-                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">3. AFTER TAKEOFF</div>
+            <div style="margin-bottom: 7px; font-size: 11px;">
+                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 3px;">3. AFTER TAKEOFF</div>
                 <div style="display: flex; justify-content: space-between;"><span>• Landing Gear:</span><strong>UP [G]</strong></div>
             </div>
 
-            <div style="margin-bottom: 6px; font-size: 10px;">
-                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">4. BEFORE LANDING</div>
+            <div style="margin-bottom: 7px; font-size: 11px;">
+                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 3px;">4. BEFORE LANDING</div>
                 <div style="display: flex; justify-content: space-between;"><span>• Landing Gear:</span><strong>DOWN [G]</strong></div>
                 <div style="display: flex; justify-content: space-between;"><span>• Landing Light:</span><strong>AS REQ [L]</strong></div>
             </div>
 
-            <div style="font-size: 10px;">
-                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">5. SHUTDOWN</div>
+            <div style="font-size: 11px;">
+                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 3px;">5. SHUTDOWN</div>
                 <div style="display: flex; justify-content: space-between;"><span>• Fuel Pump:</span><strong>OFF [F]</strong></div>
                 <div style="display: flex; justify-content: space-between;"><span>• Engine Cutoff:</span><strong>OFF [E]</strong></div>
                 <div style="display: flex; justify-content: space-between;"><span>• Battery Switch:</span><strong>OFF [Q]</strong></div>
@@ -170,38 +165,38 @@ export class Kneeboard {
         this.page3El = document.createElement('div');
         this.page3El.style.cssText = this.getPageStyle(2);
         this.page3El.innerHTML = `
-            <div style="font-weight: bold; text-align: center; text-decoration: underline; font-size: 11px; margin-bottom: 6px; color: #3a3525; letter-spacing: 0.5px;">MANIFEST</div>
+            <div style="font-weight: bold; text-align: center; text-decoration: underline; font-size: 12px; margin-bottom: 8px; color: #3a3525; letter-spacing: 0.5px;">MANIFEST</div>
 
-            <div style="margin-bottom: 8px; font-size: 10px;">
-                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">REFUEL MANIFEST</div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+            <div style="margin-bottom: 10px; font-size: 11px;">
+                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 3px;">REFUEL MANIFEST</div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
                     <span>Fuel Load:</span><span><strong id="kb-fuel-val">1000</strong> kg</span>
                 </div>
                 <input type="range" id="kb-fuel-slider" min="0" max="1500" value="1000" step="10" style="width: 100%; accent-color: #4a4532; cursor: pointer;">
             </div>
 
-            <div style="margin-bottom: 8px; font-size: 10px;">
-                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">WATER TANK MANIFEST (Max 1500 kg)</div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+            <div style="margin-bottom: 10px; font-size: 11px;">
+                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 3px;">WATER TANK MANIFEST (Max 1500 kg)</div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
                     <span>Water Load:</span><span><strong id="kb-water-val">1000</strong> kg</span>
                 </div>
                 <input type="range" id="kb-water-slider" min="0" max="1500" value="1000" step="10" style="width: 100%; accent-color: #2675b4; cursor: pointer;">
             </div>
 
-            <div style="margin-bottom: 8px; font-size: 10px;">
-                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px;">WATER TANK STATUS</div>
-                <div style="background: #c9bf9b; border: 2px solid #4a4532; border-radius: 4px; padding: 6px; text-align: center;">
-                    <div style="font-size: 9px; font-weight: bold; margin-bottom: 4px; color: #1c4e80;">[ FIREFIGHTING TANK ]</div>
-                    <div style="width: 100%; background: #b0a682; height: 16px; border: 1px solid #4a4532; border-radius: 3px; overflow: hidden; position: relative;">
+            <div style="margin-bottom: 10px; font-size: 11px;">
+                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 3px;">WATER TANK STATUS</div>
+                <div style="background: #c9bf9b; border: 2px solid #4a4532; border-radius: 4px; padding: 8px; text-align: center;">
+                    <div style="font-size: 10px; font-weight: bold; margin-bottom: 6px; color: #1c4e80;">[ FIREFIGHTING TANK ]</div>
+                    <div style="width: 100%; background: #b0a682; height: 18px; border: 1px solid #4a4532; border-radius: 3px; overflow: hidden; position: relative;">
                         <div id="kb-water-bar" style="width: 66.6%; height: 100%; background: linear-gradient(90deg, #38bdf8, #0284c7); transition: width 0.1s ease-out;"></div>
-                        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: bold; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.8);">
+                        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: bold; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.8);">
                             <span id="kb-water-pct">67</span>%
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div style="font-size: 10px; font-weight: bold; border-top: 1px dashed #6b634b; padding-top: 4px; display: flex; justify-content: space-between;">
+            <div style="font-size: 11px; font-weight: bold; border-top: 1px dashed #6b634b; padding-top: 6px; display: flex; justify-content: space-between;">
                 <span>Total Gross Mass:</span><span><strong id="kb-total-mass">6600</strong> kg</span>
             </div>
         `;
@@ -210,66 +205,67 @@ export class Kneeboard {
         this.page4El = document.createElement('div');
         this.page4El.style.cssText = this.getPageStyle(3);
         this.page4El.innerHTML = `
-            <div style="font-weight: bold; text-align: center; text-decoration: underline; font-size: 11px; margin-bottom: 5px; color: #3a3525; letter-spacing: 0.5px;">AVIATION CHART</div>
+            <div style="font-weight: bold; text-align: center; text-decoration: underline; font-size: 12px; margin-bottom: 6px; color: #3a3525; letter-spacing: 0.5px;">AVIATION CHART</div>
 
-            <div style="position: relative; background: #cebfa0; border: 2px solid #4a4532; border-radius: 4px; padding: 3px; text-align: center; height: 185px; box-sizing: border-box; margin-bottom: 5px;">
-                <!-- Grid & Map SVG -->
-                <svg width="100%" height="100%" viewBox="0 0 200 180" style="display: block;">
-                    <!-- Grid Lines -->
-                    <line x1="50" y1="0" x2="50" y2="180" stroke="#b8a882" stroke-dasharray="2,2" stroke-width="1"/>
-                    <line x1="100" y1="0" x2="100" y2="180" stroke="#a3936e" stroke-width="1.5"/>
-                    <line x1="150" y1="0" x2="150" y2="180" stroke="#b8a882" stroke-dasharray="2,2" stroke-width="1"/>
-                    
-                    <line x1="0" y1="45" x2="200" y2="45" stroke="#b8a882" stroke-dasharray="2,2" stroke-width="1"/>
-                    <line x1="0" y1="90" x2="200" y2="90" stroke="#a3936e" stroke-width="1.5"/>
-                    <line x1="0" y1="135" x2="200" y2="135" stroke="#b8a882" stroke-dasharray="2,2" stroke-width="1"/>
+            <div style="position: relative; background: #cebfa0; border: 2px solid #4a4532; border-radius: 4px; height: 185px; box-sizing: border-box; margin-bottom: 6px; overflow: hidden;">
+                <svg width="100%" height="100%" viewBox="0 0 320 185" style="display: block;">
+                    <!-- Background Grid / Compass Rings -->
+                    <circle cx="160" cy="92" r="60" fill="none" stroke="#b5ac8c" stroke-width="1" stroke-dasharray="3,3" />
+                    <circle cx="160" cy="92" r="110" fill="none" stroke="#b5ac8c" stroke-width="1" stroke-dasharray="3,3" />
+                    <line x1="160" y1="10" x2="160" y2="175" stroke="#b5ac8c" stroke-width="1" stroke-dasharray="2,2" />
+                    <line x1="20" y1="92" x2="300" y2="92" stroke="#b5ac8c" stroke-width="1" stroke-dasharray="2,2" />
 
-                    <!-- Compass / North Arrow -->
-                    <g transform="translate(180, 20)">
-                        <polygon points="0,-8 3,5 0,2 -3,5" fill="#4a4532"/>
-                        <text x="0" y="-10" font-size="6" font-weight="bold" fill="#4a4532" text-anchor="middle">N</text>
+                    <!-- North Arrow -->
+                    <text x="295" y="20" font-family="'Courier New', monospace" font-size="12" font-weight="bold" fill="#4a4532" text-anchor="end">N ▲</text>
+
+                    <!-- Connection Lines -->
+                    <line x1="160" y1="92" x2="240" y2="55" stroke="#4a4532" stroke-width="1.5" stroke-dasharray="4,3" />
+                    <line x1="160" y1="92" x2="200" y2="135" stroke="#4a4532" stroke-width="1.5" stroke-dasharray="4,3" />
+                    <line x1="160" y1="92" x2="90" y2="70" stroke="#4a4532" stroke-width="1.5" stroke-dasharray="4,3" />
+
+                    <!-- Base (Center) -->
+                    <g transform="translate(160, 92)">
+                        <circle cx="0" cy="0" r="7" fill="#000000" stroke="#fff" stroke-width="2" />
+                        <text x="0" y="24" font-family="'Courier New', monospace" font-size="11" font-weight="bold" fill="#000000" text-anchor="middle">BASE</text>
                     </g>
 
-                    <!-- Oil Rig Alpha Marker (Center) -->
-                    <g transform="translate(100, 90)">
-                        <circle cx="0" cy="0" r="8" fill="none" stroke="#8b0000" stroke-width="1.5" stroke-dasharray="3,2"/>
-                        <rect x="-3" y="-3" width="6" height="6" fill="#4a4532" rx="1"/>
-                        <text x="0" y="-12" font-size="6" font-weight="bold" fill="#8b0000" text-anchor="middle">RIG ALPHA</text>
+                    <!-- WTG 1 (NE) -->
+                    <g transform="translate(240, 55)">
+                        <circle id="chart-wtg-dot-0" cx="0" cy="0" r="6" fill="#222" stroke="#fff" stroke-width="2" />
+                        <text id="chart-wtg-text-0" x="0" y="-10" font-family="'Courier New', monospace" font-size="11" font-weight="bold" fill="#222" text-anchor="middle">WTG 1</text>
                     </g>
 
-                    <!-- Wind Farm Markers (Alpha, Bravo, Charlie) with dynamic fire status -->
-                    <g transform="translate(145, 55)">
-                        <circle id="chart-wtg-circle-0" cx="0" cy="0" r="4.5" fill="#222222"/>
-                        <text id="chart-wtg-text-0" x="0" y="10" font-size="5" font-weight="bold" fill="#222222" text-anchor="middle">WTG A</text>
+                    <!-- WTG 2 (SE) -->
+                    <g transform="translate(200, 135)">
+                        <circle id="chart-wtg-dot-1" cx="0" cy="0" r="6" fill="#222" stroke="#fff" stroke-width="2" />
+                        <text id="chart-wtg-text-1" x="0" y="24" font-family="'Courier New', monospace" font-size="11" font-weight="bold" fill="#222" text-anchor="middle">WTG 2</text>
                     </g>
-                    <g transform="translate(120, 35)">
-                        <circle id="chart-wtg-circle-1" cx="0" cy="0" r="4.5" fill="#222222"/>
-                        <text id="chart-wtg-text-1" x="0" y="10" font-size="5" font-weight="bold" fill="#222222" text-anchor="middle">WTG B</text>
-                    </g>
-                    <g transform="translate(160, 105)">
-                        <circle id="chart-wtg-circle-2" cx="0" cy="0" r="4.5" fill="#222222"/>
-                        <text id="chart-wtg-text-2" x="0" y="10" font-size="5" font-weight="bold" fill="#222222" text-anchor="middle">WTG C</text>
+
+                    <!-- WTG 3 (NW) -->
+                    <g transform="translate(90, 70)">
+                        <circle id="chart-wtg-dot-2" cx="0" cy="0" r="6" fill="#222" stroke="#fff" stroke-width="2" />
+                        <text id="chart-wtg-text-2" x="0" y="-10" font-family="'Courier New', monospace" font-size="11" font-weight="bold" fill="#222" text-anchor="middle">WTG 3</text>
                     </g>
                 </svg>
             </div>
 
-            <div style="font-size: 8px;">
-                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 2px; color: #3a3525;">NAV & OBSTRUCTION FREQUENCIES</div>
-                <div style="background: #c9bf9b; border: 1px solid #4a4532; border-radius: 3px; padding: 3px 5px;">
-                    <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #b5ac8c; padding-bottom: 1px; margin-bottom: 1px;">
-                        <span><strong>RIG ALPHA (RGA):</strong></span>
+            <div style="font-size: 11px;">
+                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 3px; color: #3a3525;">NAV & OBSTRUCTION FREQUENCIES</div>
+                <div style="background: #c9bf9b; border: 1px solid #4a4532; border-radius: 3px; padding: 5px 8px;">
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #b5ac8c; padding-bottom: 2px; margin-bottom: 2px;">
+                        <span><strong>BASE:</strong></span>
                         <span><strong>210.0 kHz</strong></span>
                     </div>
-                    <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #b5ac8c; padding-bottom: 1px; margin-bottom: 1px;">
-                        <span><strong>WTG A:</strong></span>
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #b5ac8c; padding-bottom: 2px; margin-bottom: 2px;">
+                        <span><strong>WTG 1:</strong></span>
                         <span><strong>350.0 kHz</strong></span>
                     </div>
-                    <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #b5ac8c; padding-bottom: 1px; margin-bottom: 1px;">
-                        <span><strong>WTG B:</strong></span>
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #b5ac8c; padding-bottom: 2px; margin-bottom: 2px;">
+                        <span><strong>WTG 2:</strong></span>
                         <span><strong>240.0 kHz</strong></span>
                     </div>
                     <div style="display: flex; justify-content: space-between;">
-                        <span><strong>WTG C:</strong></span>
+                        <span><strong>WTG 3:</strong></span>
                         <span><strong>290.0 kHz</strong></span>
                     </div>
                 </div>
@@ -286,10 +282,10 @@ export class Kneeboard {
         const tabFooter = document.createElement('div');
         tabFooter.style.cssText = `
             display: flex;
-            gap: 3px;
+            gap: 4px;
             border-top: 2px dashed #6b634b;
-            padding-top: 6px;
-            margin-top: 6px;
+            padding-top: 8px;
+            margin-top: 8px;
         `;
 
         this.tab1Btn = document.createElement('button');
@@ -372,9 +368,9 @@ export class Kneeboard {
             background: ${active ? '#4a4532' : '#b8b090'};
             color: ${active ? '#d8d0b0' : '#4a4532'};
             border: 1px solid #4a4532;
-            padding: 5px 1px;
+            padding: 6px 2px;
             font-family: inherit;
-            font-size: 8px;
+            font-size: 9.5px;
             font-weight: bold;
             border-radius: 3px;
             cursor: pointer;
@@ -456,7 +452,6 @@ export class Kneeboard {
         this.playerRef = player;
         if (!this.visible) return;
 
-        // Auto-detect windFarmRef from global reference or scene userData if not explicitly linked
         if (!this.windFarmRef && window.windFarm) {
             this.windFarmRef = window.windFarm;
         }
@@ -491,8 +486,6 @@ export class Kneeboard {
 
             this.updateManifestDisplay();
 
-            // Only update live fire indicators on the aviation chart if systems are off & landed.
-            // When systems are active/airborne, the chart holds its last checked state without displaying overlay banners.
             if (allowed) {
                 const wf = this.windFarmRef;
                 const activeFireIdx = wf ? (
@@ -503,15 +496,15 @@ export class Kneeboard {
                 ) : (window.windFarm && window.windFarm.activeFireIndex !== undefined ? window.windFarm.activeFireIndex : -1);
 
                 for (let i = 0; i < 3; i++) {
-                    const circleEl = document.getElementById(`chart-wtg-circle-${i}`);
+                    const dotEl = document.getElementById(`chart-wtg-dot-${i}`);
                     const textEl = document.getElementById(`chart-wtg-text-${i}`);
                     const isOnFire = (i === activeFireIdx);
 
-                    if (circleEl) {
-                        circleEl.setAttribute('fill', isOnFire ? '#c05000' : '#222222');
+                    if (dotEl) {
+                        dotEl.style.fill = isOnFire ? '#c05000' : '#222222';
                     }
                     if (textEl) {
-                        textEl.setAttribute('fill', isOnFire ? '#c05000' : '#222222');
+                        textEl.style.fill = isOnFire ? '#c05000' : '#222222';
                     }
                 }
             }
