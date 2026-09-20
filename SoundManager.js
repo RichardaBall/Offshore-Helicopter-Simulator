@@ -28,6 +28,12 @@ export class SoundManager {
         this.rainGainNode = null;
         this.isRainSoundPlaying = false;
 
+        // --- Procedural Water Spray Sound Nodes ---
+        this.sprayNoiseNode = null;
+        this.sprayFilterNode = null;
+        this.sprayGainNode = null;
+        this.isSpraySoundPlaying = false;
+
         // --- Auto-Unlock Audio Context on First User Interaction ---
         const unlockAudio = () => {
             this.ensureContextRunning();
@@ -57,6 +63,9 @@ export class SoundManager {
 
     toggleMute(mute) {
         this.isMuted = mute;
+        if (mute && this.isSpraySoundPlaying) {
+            this.stopSpraySound();
+        }
         if (this.audioCtx) {
             if (this.isMuted) {
                 // Suspending the audio context effectively mutes all audio processing from the tab's web audio context
@@ -220,6 +229,75 @@ export class SoundManager {
             noise.stop(now + duration);
         } catch (e) {
             console.warn("Splash sound failed to play:", e);
+        }
+    }
+
+    // --- Procedural Water Spray Sound Methods ("shhhhhhhhhh") ---
+    startSpraySound() {
+        if (this.isSpraySoundPlaying || !this.audioCtx || this.isMuted) return;
+        try {
+            const now = this.audioCtx.currentTime;
+            const bufferSize = this.audioCtx.sampleRate * 2;
+            const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+
+            this.sprayNoiseNode = this.audioCtx.createBufferSource();
+            this.sprayNoiseNode.buffer = buffer;
+            this.sprayNoiseNode.loop = true;
+
+            this.sprayFilterNode = this.audioCtx.createBiquadFilter();
+            this.sprayFilterNode.type = 'bandpass';
+            this.sprayFilterNode.frequency.setValueAtTime(1800, now);
+            this.sprayFilterNode.Q.setValueAtTime(1.5, now);
+
+            this.sprayGainNode = this.audioCtx.createGain();
+            this.sprayGainNode.gain.setValueAtTime(0.001, now);
+            this.sprayGainNode.gain.linearRampToValueAtTime(0.35, now + 0.05);
+
+            this.sprayNoiseNode.connect(this.sprayFilterNode);
+            this.sprayFilterNode.connect(this.sprayGainNode);
+            this.sprayGainNode.connect(this.masterGain);
+
+            this.sprayNoiseNode.start(now);
+            this.isSpraySoundPlaying = true;
+        } catch (e) {
+            console.warn("Spray sound start error:", e);
+        }
+    }
+
+    stopSpraySound() {
+        if (!this.isSpraySoundPlaying || !this.audioCtx) return;
+        try {
+            const now = this.audioCtx.currentTime;
+            if (this.sprayGainNode) {
+                this.sprayGainNode.gain.setValueAtTime(this.sprayGainNode.gain.value, now);
+                this.sprayGainNode.gain.linearRampToValueAtTime(0.001, now + 0.05);
+            }
+            setTimeout(() => {
+                if (this.sprayNoiseNode) {
+                    this.sprayNoiseNode.stop();
+                    this.sprayNoiseNode.disconnect();
+                    this.sprayNoiseNode = null;
+                }
+                this.isSpraySoundPlaying = false;
+            }, 60);
+        } catch (e) {
+            this.isSpraySoundPlaying = false;
+        }
+    }
+
+    updateWaterSpraySound(isActuallyDispensing) {
+        if (isActuallyDispensing && !this.isMuted) {
+            if (!this.isSpraySoundPlaying) {
+                this.startSpraySound();
+            }
+        } else {
+            if (this.isSpraySoundPlaying) {
+                this.stopSpraySound();
+            }
         }
     }
 

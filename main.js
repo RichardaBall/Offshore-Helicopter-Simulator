@@ -243,7 +243,10 @@ function animate() {
 
     if (waterSystem && helicopterPlayer) {
         const isDispensing = inputManager ? (inputManager.keys['Space'] || false) : false;
-        waterSystem.update(delta, helicopterPlayer, isDispensing);
+        const actuallyDispensing = waterSystem.update(delta, helicopterPlayer, isDispensing);
+        if (soundManager) {
+            soundManager.updateWaterSpraySound(actuallyDispensing);
+        }
     }
 
     if (rotorWashSystem && helicopterPlayer) {
