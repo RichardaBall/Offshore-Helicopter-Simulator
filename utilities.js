@@ -13,6 +13,7 @@ export class DeveloperTool {
         this.container = null;
         this.isFreeCamActive = false;
         this.orbitControls = null;
+        this.isCollisionEnabled = true;
 
         if (this.camera && this.renderer) {
             this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -81,9 +82,9 @@ export class DeveloperTool {
             </div>
 
             <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; margin-bottom: 14px;">
-                <label style="display: block; color: #38bdf8; margin-bottom: 8px; font-size: 11px; text-transform: uppercase; font-weight: bold;">Camera & Navigation</label>
+                <label style="display: block; color: #38bdf8; margin-bottom: 8px; font-size: 11px; text-transform: uppercase; font-weight: bold;">Camera & Physics</label>
                 <div style="display: flex; gap: 6px; margin-bottom: 6px;">
-                    <button id="dev-teleport" style="flex: 1; background: #f59e0b; border: none; color: white; padding: 6px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px;">✈️ Teleport to Base</button>
+                    <button id="dev-collision" style="flex: 1; background: #10b981; border: none; color: white; padding: 6px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px;">🛡️ Collision: ON</button>
                 </div>
                 <div style="display: flex; gap: 6px;">
                     <button id="dev-free-cam" style="flex: 1; background: #7c3aed; border: none; color: white; padding: 6px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px;">📷 Free Camera: OFF</button>
@@ -135,13 +136,29 @@ export class DeveloperTool {
             }
         });
 
-        document.getElementById('dev-teleport').addEventListener('click', () => {
-            this.teleportToTarget();
+        document.getElementById('dev-collision').addEventListener('click', () => {
+            this.toggleCollision();
         });
 
         document.getElementById('dev-free-cam').addEventListener('click', () => {
             this.toggleFreeCam();
         });
+    }
+
+    toggleCollision() {
+        this.isCollisionEnabled = !this.isCollisionEnabled;
+
+        if (this.helicopterPlayer) {
+            this.helicopterPlayer.collisionEnabled = this.isCollisionEnabled;
+        }
+
+        const btn = document.getElementById('dev-collision');
+        if (btn) {
+            btn.style.background = this.isCollisionEnabled ? '#10b981' : '#dc2626';
+            btn.textContent = `🛡️ Collision: ${this.isCollisionEnabled ? 'ON' : 'OFF'}`;
+        }
+
+        console.log(`Collision detection toggled: ${this.isCollisionEnabled ? 'ON' : 'OFF'}`);
     }
 
     toggleFreeCam() {
@@ -186,31 +203,6 @@ export class DeveloperTool {
         this.transitionTargetTarget.copy(endTarget);
         this.transitionProgress = 0;
         this.isTransitioning = true;
-    }
-
-    teleportToTarget() {
-        if (!this.helicopterPlayer || !this.helicopterPlayer.model) {
-            alert('Helicopter player not available for teleportation.');
-            return;
-        }
-
-        const targetPos = this.getTargetPosition();
-        targetPos.y += 25; // Offset above platform
-
-        this.helicopterPlayer.model.position.copy(targetPos);
-        this.helicopterPlayer.currentMoveSpeed = 0;
-        this.helicopterPlayer.currentTurnSpeed = 0;
-        this.helicopterPlayer.currentAltitudeSpeed = 0;
-        this.helicopterPlayer.verticalVelocity = 0;
-
-        if (this.isFreeCamActive) {
-            const endTarget = this.getTargetPosition();
-            const endCamPos = endTarget.clone().add(new THREE.Vector3(20, 15, 20));
-            this.smoothTransitionTo(endCamPos, endTarget);
-        }
-
-        console.log('Teleported helicopter to main base at:', targetPos);
-        alert('Successfully teleported helicopter to main base!');
     }
 
     initListeners() {

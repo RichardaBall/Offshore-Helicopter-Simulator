@@ -14,6 +14,7 @@ export class HelicopterPlayer {
         this.hasCrashedIntoStructure = false;
         this.onStructureCrash = null;
         this.isPermanentlyDamaged = false; // Gear-up landing damage state
+        this.collisionEnabled = true; // Collision detection toggle state
 
         // Find and cache the top strobe light and its bulb mesh once
         this.strobeLight = null;
@@ -234,6 +235,7 @@ export class HelicopterPlayer {
     }
 
     checkCollisions(windFarm, mainBase) {
+        if (!this.collisionEnabled) return false;
         if (this.hasCrashedInSea || this.isPermanentlyDamaged || this.hasCrashedIntoStructure) return false;
 
         // Construct helicopter bounding box
