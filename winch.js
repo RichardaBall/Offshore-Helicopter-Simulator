@@ -58,6 +58,11 @@ export class WinchSystem {
     toggleWinch(helicopterPlayer) {
         if (!helicopterPlayer || !helicopterPlayer.model) return;
         
+        // Prevent winch operation if helicopter has crashed or landing gear is extended
+        if (helicopterPlayer.hasCrashedInSea || helicopterPlayer.isPermanentlyDamaged || !helicopterPlayer.model.visible) {
+            return;
+        }
+
         // Prevent winch operation if landing gear is extended (isGearUp is false)
         if (!helicopterPlayer.isGearUp) {
             console.warn("Winch System: Cannot operate winch while landing gear is extended.");
@@ -88,6 +93,15 @@ export class WinchSystem {
 
     update(delta, helicopterPlayer) {
         if (!helicopterPlayer || !helicopterPlayer.model) return;
+
+        // If helicopter has crashed or model is hidden, immediately reset and hide winch line and hook
+        if (helicopterPlayer.hasCrashedInSea || helicopterPlayer.isPermanentlyDamaged || !helicopterPlayer.model.visible) {
+            this.winchState = 'UP';
+            this.winchHeight = 0;
+            if (this.winchHookMesh) this.winchHookMesh.visible = false;
+            if (this.winchCableLine) this.winchCableLine.visible = false;
+            return;
+        }
 
         const currentSpeed = this.getHelicopterSpeed(helicopterPlayer);
 
