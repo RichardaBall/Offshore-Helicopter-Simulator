@@ -175,7 +175,12 @@ export class WaterSystem {
 
         // --- Handle Water Tank Discharge (Realistic Firefighting Drop) ---
         let actuallyDispensing = false;
-        if (isDispensing && helicopterPlayer.waterTankKg > 0) {
+        
+        // Check landing gear status from player.js (`isGearUp`: true = retracted/up, false = extended/down)
+        // Water cannot be dispensed if landing gear is extended (!isGearUp)
+        const gearExtended = helicopterPlayer.isGearUp !== undefined ? !helicopterPlayer.isGearUp : false;
+
+        if (isDispensing && helicopterPlayer.waterTankKg > 0 && !gearExtended) {
             const dischargeRate = 350.0; 
             const dropAmount = dischargeRate * delta;
             helicopterPlayer.waterTankKg = Math.max(0, helicopterPlayer.waterTankKg - dropAmount);

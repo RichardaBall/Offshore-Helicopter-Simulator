@@ -16,6 +16,7 @@ import { SirenSystem } from './sirenSystem.js';
 import { RotorWashSystem } from './rotorWashSystem.js';
 import { HelipadDebrisSystem } from './helipadDebrisSystem.js';
 import { DeveloperTool } from './utilities.js';
+import { RescueMission } from './rescueMission.js';
 
 const { scene, camera, renderer, water, sunLight, ambientLight } = setupScene();
 const weatherSystem = new WeatherSystem();
@@ -33,7 +34,8 @@ let navIndicator = null;
 let mainBase = null;
 let windFarm = null;
 let developerTool = null;
-let liferaftManager = null; // Initialized after loadingManager is defined
+let liferaftManager = null;
+let rescueMission = null;
 
 const clock = new THREE.Clock();
 
@@ -42,7 +44,7 @@ let redBulb, greenBulb, strobeBulb;
 let heliLightsGroup;
 let heliShadow = null;
 
-// Global single keydown event listener for helicopter systems (Q, F, E, G)
+// Global single keydown event listener for helicopter systems (Q, F, E, G, X)
 window.addEventListener('keydown', (e) => {
     if (!helicopterPlayer) return;
     if (e.repeat) return;
@@ -58,6 +60,11 @@ window.addEventListener('keydown', (e) => {
     }
     if (e.code === 'KeyG') {
         helicopterPlayer.toggleLandingGear();
+    }
+    if (e.code === 'KeyX') {
+        if (rescueMission) {
+            rescueMission.toggleWinch(helicopterPlayer);
+        }
     }
 });
 
@@ -121,11 +128,11 @@ const loadingManager = new THREE.LoadingManager(
     }
 );
 
-// Initialize LiferaftManager with loadingManager so liferaft.glb preloads during loading screen
+// Initialize LiferaftManager, RescueMission, WindFarm and MainBase
 liferaftManager = new LiferaftManager(scene, loadingManager);
-
-// Initialize WindFarm and MainBase passing the shared loadingManager
+rescueMission = new RescueMission(scene, loadingManager);
 windFarm = new WindFarm(scene, loadingManager);
+
 mainBase = new MainBase(scene, loadingManager, (spawnPosition) => {
     loader.load('helicopter.glb', (gltfHeli) => {
         const model = gltfHeli.scene;
@@ -204,10 +211,8 @@ mainBase = new MainBase(scene, loadingManager, (spawnPosition) => {
         navRadio = new NavRadio(helicopterPlayer, spawnPosition);
         navIndicator = new NavIndicator(helicopterPlayer, navRadio, model, { x: -1.6, y: 3.95, z: 0.16 });
 
-        // Initialize developerTool with camera and renderer for Free Camera & OrbitControls
-        developerTool = new DeveloperTool(weatherSystem, windFarm, mainBase, helicopterPlayer, camera, renderer);
+        developerTool = new DeveloperTool(weatherSystem, windFarm, mainBase, helicopterPlayer, camera, renderer, rescueMission ? rescueMission.winchSystem : null);
 
-        // Instantly snap camera to the correct follow position upon spawn
         if (camera && inputManager) {
             const elevationAngle = 45 * (Math.PI / 180); 
             const cosAlpha = Math.cos(elevationAngle);
@@ -316,6 +321,10 @@ function animate() {
         liferaftManager.update(delta);
     }
 
+    if (rescueMission && helicopterPlayer) {
+        rescueMission.update(delta, helicopterPlayer, mainBase);
+    }
+
     if (waterSystem && helicopterPlayer) {
         const isDispensing = inputManager ? (inputManager.keys['Space'] || false) : false;
         const actuallyDispensing = waterSystem.update(delta, helicopterPlayer, isDispensing);
@@ -369,7 +378,6 @@ function animate() {
             cockpitLight.intensity = electricalActive ? 3.5 : 0.0;
         }
 
-        // Camera update logic: Check if Free Camera is active, otherwise follow helicopter
         if (developerTool && developerTool.isFreeCamActive && developerTool.orbitControls) {
             developerTool.orbitControls.update();
         } else if (inputManager && camera && !helicopterPlayer.hasCrashedInSea) {
@@ -400,7 +408,6 @@ function animate() {
         kneeboard.update(helicopterPlayer, weatherData);
     }
 
-    // Update system status UI buttons active state
     const btnBattery = document.getElementById('status-battery');
     const btnFuelPump = document.getElementById('status-fuelpump');
     const btnEngine = document.getElementById('status-engine');
