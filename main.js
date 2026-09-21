@@ -61,6 +61,43 @@ window.addEventListener('keydown', (e) => {
     }
 });
 
+// Wire up click event listeners for system status buttons
+window.addEventListener('DOMContentLoaded', () => {
+    const btnBattery = document.getElementById('status-battery');
+    if (btnBattery) {
+        btnBattery.addEventListener('click', () => {
+            if (helicopterPlayer) helicopterPlayer.toggleElectrical();
+        });
+    }
+    const btnFuelPump = document.getElementById('status-fuelpump');
+    if (btnFuelPump) {
+        btnFuelPump.addEventListener('click', () => {
+            if (helicopterPlayer) helicopterPlayer.toggleFuelPump();
+        });
+    }
+    const btnEngine = document.getElementById('status-engine');
+    if (btnEngine) {
+        btnEngine.addEventListener('click', () => {
+            if (helicopterPlayer) helicopterPlayer.toggleEngine();
+        });
+    }
+    const btnGear = document.getElementById('status-gear');
+    if (btnGear) {
+        btnGear.addEventListener('click', () => {
+            if (helicopterPlayer) helicopterPlayer.toggleLandingGear();
+        });
+    }
+    const btnLight = document.getElementById('status-light');
+    if (btnLight) {
+        btnLight.addEventListener('click', () => {
+            if (inputManager) {
+                inputManager.landingLightOn = !inputManager.landingLightOn;
+                if (soundManager) soundManager.playElectricalClick();
+            }
+        });
+    }
+});
+
 // Loading Manager to track asset loading progress across all models
 const loadingManager = new THREE.LoadingManager(
     () => {
@@ -361,6 +398,42 @@ function animate() {
 
     if (kneeboard && helicopterPlayer && !helicopterPlayer.hasCrashedInSea) {
         kneeboard.update(helicopterPlayer, weatherData);
+    }
+
+    // Update system status UI buttons active state
+    const btnBattery = document.getElementById('status-battery');
+    const btnFuelPump = document.getElementById('status-fuelpump');
+    const btnEngine = document.getElementById('status-engine');
+    const btnGear = document.getElementById('status-gear');
+    const btnLight = document.getElementById('status-light');
+
+    if (helicopterPlayer) {
+        const electricalActive = !!helicopterPlayer.isElectricalOn;
+        const fuelPumpActive = !!helicopterPlayer.isFuelPumpOn;
+        const engineActive = !!helicopterPlayer.isEngineRunning;
+        const gearUp = !!helicopterPlayer.isGearUp;
+
+        if (btnBattery) {
+            btnBattery.classList.toggle('active', electricalActive);
+            btnBattery.style.color = electricalActive ? '#2ecc71' : '';
+        }
+        if (btnFuelPump) {
+            btnFuelPump.classList.toggle('active', fuelPumpActive);
+            btnFuelPump.style.color = fuelPumpActive ? '#2ecc71' : '';
+        }
+        if (btnEngine) {
+            btnEngine.classList.toggle('active', engineActive);
+            btnEngine.style.color = engineActive ? '#2ecc71' : '';
+        }
+        if (btnGear) {
+            btnGear.classList.toggle('active', !gearUp);
+            btnGear.style.color = gearUp ? '#ff4444' : (!gearUp ? '#2ecc71' : '');
+        }
+    }
+    if (btnLight && inputManager) {
+        const lightActive = !!inputManager.landingLightOn;
+        btnLight.classList.toggle('active', lightActive);
+        btnLight.style.color = lightActive ? '#2ecc71' : '';
     }
 
     if (renderer && scene && camera) {
