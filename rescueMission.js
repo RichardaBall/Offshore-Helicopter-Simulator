@@ -192,9 +192,13 @@ export class RescueMission {
             this.raftMesh.visible = true;
         }
 
-        // Spawn survivor on raft (plays wavinghelp.glb)
+        // Spawn survivor on raft with updated forward position configuration ({ x: 0.00, y: 0.20, z: 1.75, rotationY: 0.00, scale: 1.00 })
         if (this.survivor) {
-            this.survivor.spawnOnRaft(this.raftPosition, Math.random() * Math.PI * 2);
+            this.survivor.spawnOnRaft(
+                this.raftPosition, 
+                Math.random() * Math.PI * 2, 
+                { x: 0.00, y: 0.20, z: 1.75, rotationY: 0.00, scale: 1.00 }
+            );
         }
     }
 

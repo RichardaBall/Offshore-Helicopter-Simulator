@@ -2,7 +2,7 @@ import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
 import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
 
 export class DeveloperTool {
-    constructor(weatherSystem, windFarm = null, mainBase = null, helicopterPlayer = null, camera = null, renderer = null, winchSystem = null) {
+    constructor(weatherSystem, windFarm = null, mainBase = null, helicopterPlayer = null, camera = null, renderer = null, winchSystem = null, scene = null, rescueMission = null) {
         this.weatherSystem = weatherSystem;
         this.windFarm = windFarm;
         this.mainBase = mainBase;
@@ -10,6 +10,9 @@ export class DeveloperTool {
         this.camera = camera;
         this.renderer = renderer;
         this.winchSystem = winchSystem;
+        this.scene = scene || (camera && camera.parent ? camera.parent : null);
+        this.rescueMission = rescueMission;
+
         this.isVisible = false;
         this.container = null;
         this.isFreeCamActive = false;
@@ -57,6 +60,8 @@ export class DeveloperTool {
             display: none;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
             user-select: none;
+            max-height: 90vh;
+            overflow-y: auto;
         `;
 
         this.container.innerHTML = `
@@ -92,25 +97,6 @@ export class DeveloperTool {
                 </div>
             </div>
 
-            <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; margin-bottom: 14px;">
-                <label style="display: block; color: #38bdf8; margin-bottom: 8px; font-size: 11px; text-transform: uppercase; font-weight: bold;">🪝 Winch Position Calibrator</label>
-                <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span>X: <span id="winch-val-x">-2.40</span></span>
-                        <input type="range" id="winch-slider-x" min="-5" max="5" step="0.05" value="-2.40" style="width: 170px; accent-color: #38bdf8;">
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span>Y: <span id="winch-val-y">2.80</span></span>
-                        <input type="range" id="winch-slider-y" min="-3" max="8" step="0.05" value="2.80" style="width: 170px; accent-color: #38bdf8;">
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span>Z: <span id="winch-val-z">-1.55</span></span>
-                        <input type="range" id="winch-slider-z" min="-5" max="5" step="0.05" value="-1.55" style="width: 170px; accent-color: #38bdf8;">
-                    </div>
-                </div>
-                <button id="dev-copy-winch" style="width: 100%; margin-top: 10px; background: #0284c7; border: none; color: white; padding: 6px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px;">📋 Copy Offset to Clipboard</button>
-            </div>
-
             <div style="font-size: 10px; color: #64748b; text-align: center; margin-top: 4px;">
                 [T] Toggle Menu | [WASD + Q/E] Free-Roam Cam
             </div>
@@ -118,9 +104,8 @@ export class DeveloperTool {
 
         document.body.appendChild(this.container);
 
-        // Event listeners for UI controls
         document.getElementById('dev-tool-close').addEventListener('click', () => this.toggle());
-        
+
         document.getElementById('dev-btn-day').addEventListener('click', () => {
             if (this.weatherSystem) {
                 this.weatherSystem.dayNightTimer = 0.25 * this.weatherSystem.dayCycleDuration;
@@ -163,41 +148,6 @@ export class DeveloperTool {
         document.getElementById('dev-free-cam').addEventListener('click', () => {
             this.toggleFreeCam();
         });
-
-        // Winch Offset Sliders
-        const sliderX = document.getElementById('winch-slider-x');
-        const sliderY = document.getElementById('winch-slider-y');
-        const sliderZ = document.getElementById('winch-slider-z');
-        const valX = document.getElementById('winch-val-x');
-        const valY = document.getElementById('winch-val-y');
-        const valZ = document.getElementById('winch-val-z');
-
-        const updateWinchOffsetFromUI = () => {
-            const x = parseFloat(sliderX.value);
-            const y = parseFloat(sliderY.value);
-            const z = parseFloat(sliderZ.value);
-
-            valX.textContent = x.toFixed(2);
-            valY.textContent = y.toFixed(2);
-            valZ.textContent = z.toFixed(2);
-
-            if (this.winchSystem && typeof this.winchSystem.setOffset === 'function') {
-                this.winchSystem.setOffset(x, y, z);
-            }
-        };
-
-        sliderX.addEventListener('input', updateWinchOffsetFromUI);
-        sliderY.addEventListener('input', updateWinchOffsetFromUI);
-        sliderZ.addEventListener('input', updateWinchOffsetFromUI);
-
-        document.getElementById('dev-copy-winch').addEventListener('click', () => {
-            const text = `new THREE.Vector3(${sliderX.value}, ${sliderY.value}, ${sliderZ.value})`;
-            navigator.clipboard.writeText(text).then(() => {
-                const btn = document.getElementById('dev-copy-winch');
-                btn.textContent = '✅ Copied!';
-                setTimeout(() => btn.textContent = '📋 Copy Offset to Clipboard', 2000);
-            });
-        });
     }
 
     toggleCollision() {
@@ -212,8 +162,6 @@ export class DeveloperTool {
             btn.style.background = this.isCollisionEnabled ? '#10b981' : '#dc2626';
             btn.textContent = `🛡️ Collision: ${this.isCollisionEnabled ? 'ON' : 'OFF'}`;
         }
-
-        console.log(`Collision detection toggled: ${this.isCollisionEnabled ? 'ON' : 'OFF'}`);
     }
 
     toggleFreeCam() {
@@ -235,9 +183,6 @@ export class DeveloperTool {
             const targetPos = this.getTargetPosition();
             const endCamPos = targetPos.clone().add(new THREE.Vector3(25, 20, 25));
             this.smoothTransitionTo(endCamPos, targetPos);
-            console.log('Free camera inspection mode enabled.');
-        } else {
-            console.log('Free camera inspection mode disabled.');
         }
     }
 

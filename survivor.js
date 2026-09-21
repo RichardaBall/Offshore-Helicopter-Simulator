@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 
 export const SurvivorState = {
     IDLE: 'IDLE',
@@ -13,12 +14,30 @@ export const SurvivorState = {
 };
 
 export class Survivor {
-    constructor(scene, loadingManager = null) {
+    constructor(scene, loadingManager = null, renderer = null) {
         this.scene = scene;
         this.loadingManager = loadingManager;
+        this.renderer = renderer;
+        
+        // Separate meshes, mixers, and actions for each distinct GLB model file
+        this.meshes = {
+            wavinghelp: null,
+            raising: null,
+            wavingbye: null
+        };
+        this.mixers = {
+            wavinghelp: null,
+            raising: null,
+            wavingbye: null
+        };
+        this.actions = {
+            wavinghelp: null,
+            raising: null,
+            wavingbye: null
+        };
+
         this.mesh = null;
         this.mixer = null;
-        this.actions = {};
         this.currentAction = null;
         this.currentState = SurvivorState.IDLE;
         
@@ -41,12 +60,13 @@ export class Survivor {
     /**
      * Loads character meshes and animation clips from individual GLB files in the main game folder.
      * @param {Object} files Object mapping clip names to GLB file URLs.
+     * @param {THREE.WebGLRenderer} renderer Optional WebGLRenderer for KTX2 texture support detection.
      */
     async loadModels(files = {
         wavinghelp: 'wavinghelp.glb',
         raising: 'raising.glb',
         wavingbye: 'wavingbye.glb'
-    }) {
+    }, renderer = null) {
         const loader = this.loadingManager ? new GLTFLoader(this.loadingManager) : new GLTFLoader();
 
         // Initialize and configure DRACOLoader for compressed GLB meshes
@@ -54,8 +74,22 @@ export class Survivor {
         dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
         loader.setDRACOLoader(dracoLoader);
 
+        // Initialize and configure KTX2Loader for compressed KTX2 / Basis Universal textures
+        const ktx2Loader = new KTX2Loader(this.loadingManager);
+        ktx2Loader.setTranscoderPath('https://unpkg.com/three@0.160.0/examples/jsm/libs/basis/');
+        const activeRenderer = renderer || this.renderer || window.renderer;
+        if (activeRenderer) {
+            ktx2Loader.detectSupport(activeRenderer);
+        }
+        loader.setKTX2Loader(ktx2Loader);
+
         const loadGLTF = (url) => {
             return new Promise((resolve) => {
+                if (!url || typeof url !== 'string') {
+                    console.warn(`[Survivor] Skipped loading invalid or undefined GLTF URL:`, url);
+                    resolve(null);
+                    return;
+                }
                 loader.load(
                     url,
                     (gltf) => resolve(gltf),
@@ -78,84 +112,102 @@ export class Survivor {
 
         try {
             console.log('[Survivor] Loading survivor character GLB models from main game folder...');
+            
+            const fileMap = {
+                wavinghelp: 'wavinghelp.glb',
+                raising: 'raising.glb',
+                wavingbye: 'wavingbye.glb',
+                ...(files || {})
+            };
+
             const [wavinghelpGltf, raisingGltf, wavingbyeGltf] = await Promise.all([
-                loadGLTF(files.wavinghelp),
-                loadGLTF(files.raising),
-                loadGLTF(files.wavingbye)
+                loadGLTF(fileMap.wavinghelp),
+                loadGLTF(fileMap.raising),
+                loadGLTF(fileMap.wavingbye)
             ]);
 
-            const baseGltf = wavinghelpGltf || raisingGltf || wavingbyeGltf;
-            if (!baseGltf) {
+            if (!wavinghelpGltf && !raisingGltf && !wavingbyeGltf) {
                 console.error('[Survivor] All character GLB model paths failed to load.');
                 return false;
             }
 
-            // Base character mesh from available GLTF
-            this.mesh = baseGltf.scene;
+            const processGltf = (gltf, key, isWavingHelp = false) => {
+                if (!gltf) return null;
+                const mesh = gltf.scene;
 
-            // Force world matrix calculation on skinned mesh before bounding box measurement
-            this.mesh.updateMatrixWorld(true);
-            const bbox = new THREE.Box3().setFromObject(this.mesh);
-            const size = new THREE.Vector3();
-            bbox.getSize(size);
+                // Force world matrix calculation on skinned mesh before bounding box measurement
+                mesh.updateMatrixWorld(true);
+                const bbox = new THREE.Box3().setFromObject(mesh);
+                const size = new THREE.Vector3();
+                bbox.getSize(size);
 
-            if (size.y > 0.05 && size.y < 100) {
-                const scale = (this.targetHeight / size.y);
-                this.mesh.scale.set(scale, scale, scale);
-            } else {
-                // Safe default scale if bounding box size is non-standard (scaled up by 25%)
-                this.mesh.scale.set(1.25, 1.25, 1.25);
-            }
+                if (size.y > 0.05 && size.y < 100) {
+                    const scale = (this.targetHeight / size.y);
+                    mesh.scale.set(scale, scale, scale);
+                } else {
+                    // Safe default scale if bounding box size is non-standard (scaled up by 25%)
+                    mesh.scale.set(1.25, 1.25, 1.25);
+                }
 
-            // Enable shadows and transparent material blending for smooth fade-outs
-            this.mesh.traverse((child) => {
-                if (child.isMesh) {
-                    child.castShadow = true;
-                    child.receiveShadow = true;
-                    if (child.material) {
-                        if (Array.isArray(child.material)) {
-                            child.material = child.material.map(m => {
-                                const cloned = m.clone();
-                                cloned.transparent = true;
-                                cloned.opacity = 1.0;
-                                cloned.needsUpdate = true;
-                                return cloned;
-                            });
-                        } else {
-                            child.material = child.material.clone();
-                            child.material.transparent = true;
-                            child.material.opacity = 1.0;
-                            child.material.needsUpdate = true;
+                // If this is wavinghelp, scale it up an additional 50% as requested
+                if (isWavingHelp) {
+                    mesh.scale.multiplyScalar(1.5);
+                }
+
+                // Enable shadows and transparent material blending for smooth fade-outs
+                mesh.traverse((child) => {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                        if (child.material) {
+                            if (Array.isArray(child.material)) {
+                                child.material = child.material.map(m => {
+                                    const cloned = m.clone();
+                                    cloned.transparent = true;
+                                    cloned.opacity = 1.0;
+                                    cloned.needsUpdate = true;
+                                    return cloned;
+                                });
+                            } else {
+                                child.material = child.material.clone();
+                                child.material.transparent = true;
+                                child.material.opacity = 1.0;
+                                child.material.needsUpdate = true;
+                            }
                         }
                     }
+                });
+
+                // Initialize Three.js AnimationMixer on the character mesh
+                const mixer = new THREE.AnimationMixer(mesh);
+                let action = null;
+                if (gltf.animations && gltf.animations.length > 0) {
+                    action = mixer.clipAction(gltf.animations[0]);
                 }
-            });
 
-            // Initialize Three.js AnimationMixer on the character mesh
-            this.mixer = new THREE.AnimationMixer(this.mesh);
+                mesh.visible = false;
+                this.scene.add(mesh);
 
-            // Register animations from each loaded GLB file
-            if (wavinghelpGltf && wavinghelpGltf.animations.length > 0) {
-                this.actions['wavinghelp'] = this.mixer.clipAction(wavinghelpGltf.animations[0]);
-            }
-            if (raisingGltf && raisingGltf.animations.length > 0) {
-                this.actions['raising'] = this.mixer.clipAction(raisingGltf.animations[0]);
-            }
-            if (wavingbyeGltf && wavingbyeGltf.animations.length > 0) {
-                this.actions['wavingbye'] = this.mixer.clipAction(wavingbyeGltf.animations[0]);
-            }
+                this.meshes[key] = mesh;
+                this.mixers[key] = mixer;
+                this.actions[key] = action;
+                return mesh;
+            };
 
-            // Fallback for missing clips
-            const fallbackClip = this.actions['wavinghelp'] || this.actions['raising'] || this.actions['wavingbye'];
-            if (!this.actions['wavinghelp']) this.actions['wavinghelp'] = fallbackClip;
-            if (!this.actions['raising']) this.actions['raising'] = fallbackClip;
-            if (!this.actions['wavingbye']) this.actions['wavingbye'] = fallbackClip;
+            processGltf(wavinghelpGltf, 'wavinghelp', true);
+            processGltf(raisingGltf, 'raising', false);
+            processGltf(wavingbyeGltf, 'wavingbye', false);
 
-            // Initially hide mesh until spawned on raft or disembarked
-            this.mesh.visible = false;
-            this.scene.add(this.mesh);
+            // Fallbacks for any missing model files
+            const fallbackMesh = this.meshes['wavinghelp'] || this.meshes['raising'] || this.meshes['wavingbye'];
+            const fallbackMixer = this.mixers['wavinghelp'] || this.mixers['raising'] || this.mixers['wavingbye'];
+            const fallbackAction = this.actions['wavinghelp'] || this.actions['raising'] || this.actions['wavingbye'];
 
-            console.log('[Survivor] Character GLB models successfully loaded, scaled up by 25%, and added to scene.');
+            if (!this.meshes['wavinghelp']) { this.meshes['wavinghelp'] = fallbackMesh; this.mixers['wavinghelp'] = fallbackMixer; this.actions['wavinghelp'] = fallbackAction; }
+            if (!this.meshes['raising']) { this.meshes['raising'] = fallbackMesh; this.mixers['raising'] = fallbackMixer; this.actions['raising'] = fallbackAction; }
+            if (!this.meshes['wavingbye']) { this.meshes['wavingbye'] = fallbackMesh; this.mixers['wavingbye'] = fallbackMixer; this.actions['wavingbye'] = fallbackAction; }
+
+            console.log('[Survivor] Character GLB models successfully loaded, scaled, and added to scene.');
 
             // If spawn requested before model finished loading, trigger spawn now
             if (this.currentState === SurvivorState.ON_RAFT && this.raftPosition) {
@@ -172,59 +224,67 @@ export class Survivor {
     }
 
     /**
-     * Sets opacity across all sub-materials on the survivor mesh.
+     * Sets opacity across all sub-materials on all loaded survivor meshes.
      * @param {number} val Opacity value (0.0 to 1.0)
      */
     setOpacity(val) {
-        if (!this.mesh) return;
-        this.mesh.traverse((child) => {
-            if (child.isMesh && child.material) {
-                if (Array.isArray(child.material)) {
-                    child.material.forEach((mat) => {
-                        mat.transparent = true;
-                        mat.opacity = val;
-                        mat.needsUpdate = true;
-                    });
-                } else {
-                    child.material.transparent = true;
-                    child.material.opacity = val;
-                    child.material.needsUpdate = true;
+        Object.values(this.meshes).forEach(mesh => {
+            if (!mesh) return;
+            mesh.traverse((child) => {
+                if (child.isMesh && child.material) {
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach((mat) => {
+                            mat.transparent = true;
+                            mat.opacity = val;
+                            mat.needsUpdate = true;
+                        });
+                    } else {
+                        child.material.transparent = true;
+                        child.material.opacity = val;
+                        child.material.needsUpdate = true;
+                    }
                 }
-            }
+            });
         });
     }
 
     /**
-     * Plays target animation clip cleanly by stopping active animations.
-     * @param {string} clipName Name of registered action ('wavinghelp', 'raising', 'wavingbye')
+     * Activates the specified model key, hiding all others and playing its animation.
+     * @param {string} key 'wavinghelp', 'raising', or 'wavingbye'
      * @param {boolean} loop Whether animation loops continuously
      */
-    playAnimation(clipName, loop = true) {
-        const nextAction = this.actions[clipName];
-        if (!nextAction) return;
+    setActiveModel(key, loop = true) {
+        Object.keys(this.meshes).forEach(k => {
+            if (this.meshes[k]) {
+                this.meshes[k].visible = false;
+            }
+        });
 
-        if (this.currentAction === nextAction && nextAction.isRunning()) {
-            return;
+        this.mesh = this.meshes[key];
+        this.mixer = this.mixers[key];
+        const nextAction = this.actions[key];
+
+        if (this.mesh) {
+            this.mesh.visible = true;
         }
 
-        // Stop all active animation actions on mixer to cleanly switch clips
-        if (this.mixer) {
+        if (nextAction && this.mixer) {
             this.mixer.stopAllAction();
+            nextAction
+                .reset()
+                .setLoop(loop ? THREE.LoopRepeat : THREE.LoopOnce)
+                .setEffectiveTimeScale(1)
+                .setEffectiveWeight(1)
+                .play();
+
+            nextAction.clampWhenFinished = !loop;
+            this.currentAction = nextAction;
+        } else {
+            this.currentAction = null;
         }
-
-        // Configure and play target animation clip immediately
-        nextAction
-            .reset()
-            .setLoop(loop ? THREE.LoopRepeat : THREE.LoopOnce)
-            .setEffectiveTimeScale(1)
-            .setEffectiveWeight(1)
-            .play();
-
-        nextAction.clampWhenFinished = !loop;
-        this.currentAction = nextAction;
     }
 
-    // Step 1: Survivor appears on liferaft waving for help (wavinghelp.glb)
+    // Step 1: Survivor appears standing at the opening/door of the liferaft waving for help (wavinghelp.glb)
     spawnOnRaft(raftPosition, raftRotationY = 0) {
         this.raftPosition = raftPosition.clone();
         this.raftRotationY = raftRotationY;
@@ -233,12 +293,17 @@ export class Survivor {
         this.fadeTimer = 0;
         this.setOpacity(1.0);
 
+        this.setActiveModel('wavinghelp', true);
         if (!this.mesh) return;
-        // Position survivor so feet rest on top of liferaft floor
-        this.mesh.position.set(raftPosition.x, raftPosition.y + 0.25, raftPosition.z);
-        this.mesh.rotation.set(0, raftRotationY, 0);
+
+        // Position survivor standing precisely in the raft door opening by offsetting in the opposite direction (raftRotationY + Math.PI)
+        const forwardOffset = 0.85;
+        const offset = new THREE.Vector3(0, 0.0, forwardOffset);
+        offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), raftRotationY + Math.PI);
+
+        this.mesh.position.copy(raftPosition).add(offset);
+        this.mesh.rotation.set(0, raftRotationY + Math.PI, 0);
         this.mesh.visible = true;
-        this.playAnimation('wavinghelp', true);
     }
 
     // Step 2: Hook hits raft — raft vanishes, survivor attaches to winch line raising (raising.glb)
@@ -248,16 +313,17 @@ export class Survivor {
         this.fadeTimer = 0;
         this.setOpacity(1.0);
 
+        this.setActiveModel('raising', true);
         if (!this.mesh) return;
         this.mesh.visible = true;
-        this.playAnimation('raising', true);
     }
 
     // Step 3: Winch fully retracted — survivor vanishes inside cabin ("onboard")
     enterCabin() {
         this.currentState = SurvivorState.IN_CABIN;
-        if (!this.mesh) return;
-        this.mesh.visible = false;
+        Object.values(this.meshes).forEach(m => {
+            if (m) m.visible = false;
+        });
     }
 
     // Step 4: Helicopter landed at main base with all systems off — survivor appears at calibrated coordinates waving goodbye (wavingbye.glb)
@@ -268,11 +334,12 @@ export class Survivor {
         this.pendingDeckY = deckY;
         this.pendingAutoFade = autoFade;
 
-        if (!this.mesh) return;
-
         this.setOpacity(1.0);
         this.isFading = false;
         this.fadeTimer = 0;
+
+        this.setActiveModel('wavingbye', true);
+        if (!this.mesh) return;
 
         if (posOrHeliPos && typeof posOrHeliPos === 'object' && ('x' in posOrHeliPos) && ('z' in posOrHeliPos) && !posOrHeliPos.isVector3) {
             const x = posOrHeliPos.x !== undefined ? posOrHeliPos.x : 5.869;
@@ -305,9 +372,7 @@ export class Survivor {
         }
 
         this.mesh.visible = true;
-
         this.currentState = SurvivorState.WAVING;
-        this.playAnimation('wavingbye', true);
 
         if (autoFade) {
             // Wave for 7.5 seconds, then initiate a 2.5 second smooth fade-out (total 10s)
@@ -326,37 +391,32 @@ export class Survivor {
      * @param {THREE.Vector3} hookPosition Current world position of winch hook
      */
     update(deltaTime, hookPosition = null) {
-        if (!this.mixer || !this.mesh) return;
-
-        // Update skeletal animation keyframes if mesh is visible
-        if (this.mesh.visible) {
-            this.mixer.update(deltaTime);
-        }
+        // Update all animation mixers
+        Object.values(this.mixers).forEach(mixer => {
+            if (mixer) {
+                mixer.update(deltaTime);
+            }
+        });
 
         // Handle disembarkation opacity fade-out
-        if (this.isFading && this.mesh.visible) {
+        if (this.isFading && this.mesh && this.mesh.visible) {
             this.fadeTimer += deltaTime;
             const alpha = Math.max(0, 1.0 - (this.fadeTimer / this.fadeDuration));
             this.setOpacity(alpha);
 
             if (alpha <= 0) {
                 this.isFading = false;
-                this.mesh.visible = false;
+                Object.values(this.meshes).forEach(m => { if (m) m.visible = false; });
                 this.currentState = SurvivorState.COMPLETED;
             }
         }
 
         switch (this.currentState) {
             case SurvivorState.WINCHING:
-                if (hookPosition && this.mesh.visible) {
+                if (hookPosition && this.mesh && this.mesh.visible) {
                     // Match hook coordinate with hands offset
                     this.mesh.position.copy(hookPosition);
                     this.mesh.position.y -= this.handOffset;
-
-                    // Ensure raising.glb animation is active while winch cable is being retracted
-                    if (this.currentAction !== this.actions['raising']) {
-                        this.playAnimation('raising', true);
-                    }
                 }
                 break;
         }

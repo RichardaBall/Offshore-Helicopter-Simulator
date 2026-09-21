@@ -2,6 +2,3 @@
 - Fix the rotor stutter
 - Search light automation, comes on at night when near the helipad and locks onto centre of helipad. Also comes on when rescue mission at night and locks onto liferaft. 
 
-- Winch line needs to vanish with heli on crash
-
-{ x: -14.00, y: 4.80, z: 3.35, rotationY: 1.5533 }  Disembarkment
