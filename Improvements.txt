@@ -1,7 +1,5 @@
-- Loading screen update
-- Add ability to fly sideways
-- Add light to life raft
-- Winch line implement and boats, rescue crew.
 - Scenery objects to improve immersion.
-- Add symbology on screen to show state of systems. Battery, Fuel, Engine, Gear, Landing Light.
 - Fix the rotor stutter
+- Search light automation, comes on at night when near the helipad and locks onto centre of helipad. Also comes on when rescue mission at night and locks onto liferaft. 
+
+
