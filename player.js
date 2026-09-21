@@ -87,6 +87,7 @@ export class HelicopterPlayer {
         this.maxAltitudeSpeed = 12.0;    
 
         this.currentMoveSpeed = 0.0;
+        this.currentStrafeSpeed = 0.0; // Lateral left/right drift speed
         this.currentTurnSpeed = 0.0;
         this.currentAltitudeSpeed = 0.0;
 
@@ -272,6 +273,7 @@ export class HelicopterPlayer {
                 const activeGroundLevel = this.getCurrentGroundLevel();
                 this.model.position.y = activeGroundLevel;
                 this.currentMoveSpeed = 0.0;
+                this.currentStrafeSpeed = 0.0;
                 this.currentTurnSpeed = 0.0;
                 this.currentAltitudeSpeed = 0.0;
                 if (this.mixer) this.mixer.update(delta);
@@ -317,6 +319,7 @@ export class HelicopterPlayer {
             this.enginePower = 0.0;
             this.isEngineRunning = false;
             this.currentMoveSpeed = 0.0;
+            this.currentStrafeSpeed = 0.0;
             this.currentTurnSpeed = 0.0;
             this.currentAltitudeSpeed = 0.0;
             this.model.position.y = activeGroundLevel;
@@ -410,6 +413,7 @@ export class HelicopterPlayer {
 
         if (isOnGround && this.targetEnginePower === 0 && this.enginePower <= 0.001 && distanceFromHelipad < 12.0) {
             this.currentMoveSpeed = 0.0;
+            this.currentStrafeSpeed = 0.0;
             this.currentTurnSpeed = 0.0;
             this.currentAltitudeSpeed = 0.0;
             this.model.position.y = activeGroundLevel;
@@ -426,15 +430,25 @@ export class HelicopterPlayer {
         let activeSpeedLimit = (isOnGround ? this.maxTaxiSpeed : this.maxMoveSpeed) * Math.max(this.enginePower, 0.2) / activeDragMultiplier;
         const activeTurnSpeed = (isOnGround ? this.maxTaxiTurnSpeed : this.maxTurnSpeed) * Math.min(massFactor, 1.2) * Math.max(this.enginePower, 0.2);
 
-        let targetMove = 0, targetTurn = 0, targetAltitude = 0;
+        let targetMove = 0, targetStrafe = 0, targetTurn = 0, targetAltitude = 0;
 
-        if (keys['ArrowLeft']) targetTurn += activeTurnSpeed;
-        if (keys['ArrowRight']) targetTurn -= activeTurnSpeed;
+        // Flight controls binding check (supporting both number row & numpad keys, with arrow key fallbacks)
+        const key8 = keys['Digit8'] || keys['Numpad8'] || keys['ArrowUp'];
+        const key5 = keys['Digit5'] || keys['Numpad5'] || keys['ArrowDown'];
+        const key4 = keys['Digit4'] || keys['Numpad4'] || keys['ArrowLeft'];
+        const key6 = keys['Digit6'] || keys['Numpad6'] || keys['ArrowRight'];
+        const key7 = keys['Digit7'] || keys['Numpad7'];
+        const key9 = keys['Digit9'] || keys['Numpad9'];
+
+        if (key4) targetTurn += activeTurnSpeed;
+        if (key6) targetTurn -= activeTurnSpeed;
 
         // --- 100% RPM Takeoff & Flight Restriction ---
         if (this.enginePower >= 0.99) {
-            if (keys['ArrowUp']) targetMove -= activeSpeedLimit;
-            if (keys['ArrowDown']) targetMove += activeSpeedLimit;
+            if (key8) targetMove -= activeSpeedLimit;
+            if (key5) targetMove += activeSpeedLimit;
+            if (key7) targetStrafe += activeSpeedLimit; // Drift Left
+            if (key9) targetStrafe -= activeSpeedLimit; // Drift Right
             if (keys['ShiftLeft'] || keys['ShiftRight']) targetAltitude += (this.maxAltitudeSpeed * this.enginePower * activeLiftMultiplier) * massFactor;
             if (keys['ControlLeft'] || keys['ControlRight']) targetAltitude -= (this.maxAltitudeSpeed * this.enginePower * activeLiftMultiplier) * massFactor;
         } else if (!isOnGround) {
@@ -443,14 +457,17 @@ export class HelicopterPlayer {
             targetMove -= sinkRate * 4.0;
         } else {
             // On ground and RPM < 100%: allow taxiing, but strictly prevent lift off / positive altitude changes
-            if (keys['ArrowUp']) targetMove -= activeSpeedLimit;
-            if (keys['ArrowDown']) targetMove += activeSpeedLimit;
+            if (key8) targetMove -= activeSpeedLimit;
+            if (key5) targetMove += activeSpeedLimit;
+            if (key7) targetStrafe += activeSpeedLimit; // Drift Left
+            if (key9) targetStrafe -= activeSpeedLimit; // Drift Right
             if (keys['ControlLeft'] || keys['ControlRight']) {
                 targetAltitude -= (this.maxAltitudeSpeed * this.enginePower * activeLiftMultiplier) * massFactor;
             }
         }
 
         this.currentMoveSpeed += (targetMove - this.currentMoveSpeed) * Math.min((isOnGround ? 2.0 : 0.8) * massFactor * delta, 1.0);
+        this.currentStrafeSpeed += (targetStrafe - this.currentStrafeSpeed) * Math.min((isOnGround ? 2.0 : 0.8) * massFactor * delta, 1.0);
         this.currentTurnSpeed += (targetTurn - this.currentTurnSpeed) * Math.min(2.0 * delta, 1.0);
         this.currentAltitudeSpeed += (targetAltitude - this.currentAltitudeSpeed) * Math.min(3.5 * massFactor * delta, 1.0);
 
@@ -458,6 +475,7 @@ export class HelicopterPlayer {
         const prevPosition = this.model.position.clone();
 
         if (Math.abs(this.currentMoveSpeed) > 0.001) this.model.translateX(this.currentMoveSpeed * delta);
+        if (Math.abs(this.currentStrafeSpeed) > 0.001) this.model.translateZ(this.currentStrafeSpeed * delta);
         if (Math.abs(this.currentTurnSpeed) > 0.001) this.model.rotation.y += this.currentTurnSpeed * delta;
 
         if (weatherData && weatherData.wind && !isOnGround) {

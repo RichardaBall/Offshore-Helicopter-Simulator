@@ -13,6 +13,12 @@ export class WinchSystem {
         this.offsetX = -2.4;
         this.offsetY = 2.8;
         this.offsetZ = -1.55;
+
+        // Maximum allowable flight speed for winch operation (25.0 m/s (~48 kts) for storm maneuvering)
+        this.maxOperatingSpeed = 25.0;
+
+        // Cable lowering/raising speed (reduced back to 12.0 m/s)
+        this.cableSpeed = 12.0;
         
         this._initWinchMeshes();
     }
@@ -41,6 +47,14 @@ export class WinchSystem {
         this.offsetZ = z;
     }
 
+    getHelicopterSpeed(helicopterPlayer) {
+        if (!helicopterPlayer) return 0;
+        const move = helicopterPlayer.currentMoveSpeed || 0;
+        const strafe = helicopterPlayer.currentStrafeSpeed || 0;
+        const altitude = helicopterPlayer.currentAltitudeSpeed || 0;
+        return Math.hypot(move, strafe, altitude);
+    }
+
     toggleWinch(helicopterPlayer) {
         if (!helicopterPlayer || !helicopterPlayer.model) return;
         
@@ -50,7 +64,14 @@ export class WinchSystem {
             return;
         }
 
+        const currentSpeed = this.getHelicopterSpeed(helicopterPlayer);
+
         if (this.winchState === 'UP' || this.winchState === 'RAISING') {
+            // Prevent lowering winch if flight speed is above maximum operating speed threshold
+            if (currentSpeed > this.maxOperatingSpeed) {
+                console.warn(`Winch System: Cannot lower winch - aircraft speed (${currentSpeed.toFixed(1)} m/s) exceeds maximum winch operating speed (${this.maxOperatingSpeed.toFixed(1)} m/s).`);
+                return;
+            }
             this.winchState = 'LOWERING';
             this.winchHookMesh.visible = true;
             this.winchCableLine.visible = true;
@@ -68,11 +89,21 @@ export class WinchSystem {
     update(delta, helicopterPlayer) {
         if (!helicopterPlayer || !helicopterPlayer.model) return;
 
+        const currentSpeed = this.getHelicopterSpeed(helicopterPlayer);
+
         // If landing gear is extended (!isGearUp), automatically retract winch if it is deployed or lowering
         if (!helicopterPlayer.isGearUp) {
             if (this.winchState === 'LOWERING' || this.winchState === 'DOWN') {
                 this.winchState = 'RAISING';
                 console.log("Winch System: Landing gear extended, automatically retracting winch...");
+            }
+        }
+
+        // If helicopter speed exceeds operating speed limit, automatically retract winch if lowering or deployed
+        if (currentSpeed > this.maxOperatingSpeed) {
+            if (this.winchState === 'LOWERING' || this.winchState === 'DOWN') {
+                this.winchState = 'RAISING';
+                console.log(`Winch System: Airspeed (${currentSpeed.toFixed(1)} m/s) exceeded operating threshold (${this.maxOperatingSpeed.toFixed(1)} m/s), automatically retracting winch...`);
             }
         }
 
@@ -85,13 +116,13 @@ export class WinchSystem {
         const maxExtension = Math.max(5.0, heliPos.y - targetSeaLevel);
 
         if (this.winchState === 'LOWERING') {
-            this.winchHeight += delta * 12;
+            this.winchHeight += delta * this.cableSpeed;
             if (this.winchHeight >= maxExtension) {
                 this.winchHeight = maxExtension;
                 this.winchState = 'DOWN';
             }
         } else if (this.winchState === 'RAISING') {
-            this.winchHeight -= delta * 12;
+            this.winchHeight -= delta * this.cableSpeed;
             if (this.winchHeight <= 0) {
                 this.winchHeight = 0;
                 this.winchState = 'UP';

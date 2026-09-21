@@ -6,7 +6,13 @@ export class InputManager {
         this.landingLightOn = false;
 
         window.addEventListener('keydown', (e) => {
-            if (['KeyW', 'KeyS', 'KeyA', 'KeyD', 'ControlLeft', 'ControlRight', 'ShiftLeft', 'ShiftRight', 'KeyQ', 'KeyF', 'KeyE', 'KeyG', 'KeyL', 'Space'].includes(e.code)) {
+            if ([
+                'KeyW', 'KeyS', 'KeyA', 'KeyD', 'ControlLeft', 'ControlRight', 'ShiftLeft', 'ShiftRight', 
+                'KeyQ', 'KeyF', 'KeyE', 'KeyG', 'KeyL', 'Space',
+                'Digit8', 'Digit4', 'Digit5', 'Digit6', 'Digit7', 'Digit9',
+                'Numpad8', 'Numpad4', 'Numpad5', 'Numpad6', 'Numpad7', 'Numpad9',
+                'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'
+            ].includes(e.code)) {
                 e.preventDefault();
             }
 

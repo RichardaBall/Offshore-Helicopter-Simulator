@@ -22,9 +22,9 @@ A 3D offshore helicopter flight simulation game built using Three.js, WebGL, and
 
 \* \*\*`sceneSetup.js`\*\*: Initializes the Three.js core environment (`Scene`, `Camera`, `WebGLRenderer`, directional/ambient lighting, fog, and the dynamic ocean water plane).
 
-\* \*\*`player.js`\*\*: Controls `HelicopterPlayer` flight physics, mass calculations, rotor rotation, autorotation mechanics, landing gear drag, fuel consumption rates, strobe low-fuel warnings (<= 500 kg orange, <= 100 kg rapid flash red), and engine state.
+\* \*\*`player.js`\*\*: Controls `HelicopterPlayer` flight physics, mass calculations, rotor rotation, lateral drifting (strafe physics), autorotation mechanics, landing gear drag, fuel consumption rates, strobe low-fuel warnings (<= 500 kg orange, <= 100 kg rapid flash red), and engine state.
 
-\* \*\*`inputManager.js`\*\*: Translates raw user input into flight movement vectors, prioritizing keyboard arrow keys, managing camera distance via mouse scroll, and detecting space bar input for water dispensing.
+\* \*\*`inputManager.js`\*\*: Translates raw user input into flight movement vectors, prioritizing digit/numpad keys (8, 4, 5, 6, 7, 9), managing camera distance via mouse scroll, and detecting space bar input for water dispensing.
 
 \* \*\*`waterSystem.js`\*\*: Manages the aerial firefighting water/foam drop particle system; generates procedural soft radial canvas textures for aerated mist, handles volumetric particle blending, gravitational acceleration, and aerodynamic slipstream drag.
 
@@ -78,7 +78,11 @@ A 3D offshore helicopter flight simulation game built using Three.js, WebGL, and
 
 \* \*\*`Space Bar`\*\*: Hold to continuously dispense aerial firefighting water/foam spray.
 
-\* \*\*`Arrow Keys`\*\*: Pitch / Roll / Turn movement
+\* \*\*`8 / 5`\*\*: Pitch Forward / Pitch Backward
+
+\* \*\*`4 / 6`\*\*: Turn Left / Turn Right
+
+\* \*\*`7 / 9`\*\*: Drift Left / Drift Right (Lateral strafe)
 
 \* \*\*`Shift / Ctrl`\*\*: Collective Up / Down (Altitude)
 
@@ -94,7 +98,7 @@ A 3D offshore helicopter flight simulation game built using Three.js, WebGL, and
 
 \* \*\*Environment \& Lighting\*\*: Offshore main base platform equipped with helipad and structure lights set against dynamic ocean waves and day/night weather cycles, complemented by a circular wind farm featuring 3 inward-facing wind turbines with NDB radio beacons (350.0, 240.0, 290.0 kHz), synchronized flashing red obstruction lights, and emergency siren systems.
 
-\* \*\*Flight Systems\*\*: Modeled autorotation, landing gear drag penalties, dynamic fuel consumption based on mass and weather, and exterior strobe lighting low-fuel warnings (<= 500 kg fast orange blink, <= 100 kg rapid red blink).
+\* \*\*Flight Systems\*\*: Modeled autorotation, lateral drift physics, landing gear drag penalties, dynamic fuel consumption based on mass and weather, and exterior strobe lighting low-fuel warnings (<= 500 kg fast orange blink, <= 100 kg rapid red blink).
 
 \* \*\*Firefighting Water Drop System\*\*: High-density volumetric particle system (`waterSystem.js`) featuring procedural aerated white mist/foam textures, gravitational acceleration, and aerodynamic slipstream drag sweep matching real-world helicopter water bucket drops.
 
