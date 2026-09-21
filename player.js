@@ -288,11 +288,12 @@ export class HelicopterPlayer {
         const currentPos2D = new THREE.Vector2(this.model.position.x, this.model.position.z);
         const distanceFromHelipad = currentPos2D.distanceTo(helipadCenter2D);
 
-        if (this.model.position.y <= 0.1 && distanceFromHelipad >= 12.0) {
+        if (this.model.position.y <= this.landingHeightOffset && distanceFromHelipad >= 12.0) {
             this.hasCrashedInSea = true;
 
             if (this.soundManager) {
                 this.soundManager.stopHelicopterEngine();
+                this.soundManager.playSplashSound();
             }
 
             if (this.onSeaCrash) {
@@ -472,7 +473,7 @@ export class HelicopterPlayer {
         const maxCeilingMeters = this.maxCeilingFeet / 3.28084;
         if (newY >= maxCeilingMeters) {
             newY = maxCeilingMeters;
-            this.currentAltitudeSpeed = 0;
+            this.currentAltitudeSpeed = 0.0;
         }
 
         this.model.position.y = newY;

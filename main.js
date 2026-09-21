@@ -22,7 +22,6 @@ const weatherSystem = new WeatherSystem();
 const soundManager = new SoundManager();
 const inputManager = new InputManager(soundManager);
 const kneeboard = new Kneeboard();
-const liferaftManager = new LiferaftManager(scene);
 const waterSystem = new WaterSystem(scene);
 const rotorWashSystem = new RotorWashSystem(scene);
 const helipadDebrisSystem = new HelipadDebrisSystem(scene);
@@ -34,6 +33,7 @@ let navIndicator = null;
 let mainBase = null;
 let windFarm = null;
 let developerTool = null;
+let liferaftManager = null; // Initialized after loadingManager is defined
 
 const clock = new THREE.Clock();
 
@@ -83,6 +83,9 @@ const loadingManager = new THREE.LoadingManager(
         console.error('Error loading asset:', url);
     }
 );
+
+// Initialize LiferaftManager with loadingManager so liferaft.glb preloads during loading screen
+liferaftManager = new LiferaftManager(scene, loadingManager);
 
 // Initialize WindFarm and MainBase passing the shared loadingManager
 windFarm = new WindFarm(scene, loadingManager);
@@ -183,8 +186,7 @@ mainBase = new MainBase(scene, loadingManager, (spawnPosition) => {
             camera.lookAt(model.position);
         }
 
-        helicopterPlayer.onSeaCrash = (crashPos) => {
-            console.log("AW189: Sea crash event triggered at position:", crashPos);
+        const handleCrash = (crashPos, isSea = false) => {
             if (helicopterPlayer && helicopterPlayer.model) {
                 helicopterPlayer.model.visible = false;
             }
@@ -193,10 +195,14 @@ mainBase = new MainBase(scene, loadingManager, (spawnPosition) => {
             }
             if (soundManager) {
                 soundManager.stopHelicopterEngine();
-                soundManager.playSplashSound();
+                if (isSea) {
+                    soundManager.playSplashSound();
+                }
             }
-            if (liferaftManager) {
+            if (isSea && liferaftManager) {
                 liferaftManager.deploy(crashPos);
+            } else if (liferaftManager) {
+                liferaftManager.showRestart();
             }
 
             if (kneeboard && kneeboard.domElement) {
@@ -214,18 +220,19 @@ mainBase = new MainBase(scene, loadingManager, (spawnPosition) => {
             }
         };
 
+        helicopterPlayer.onSeaCrash = (crashPos) => {
+            console.log("AW189: Sea crash event triggered at position:", crashPos);
+            handleCrash(crashPos, true);
+        };
+
         helicopterPlayer.onHelipadCrash = (crashPos) => {
             console.log("AW189: Gear-up landing damage sustained at position:", crashPos);
-            if (soundManager) {
-                soundManager.stopHelicopterEngine();
-            }
+            handleCrash(crashPos, false);
         };
 
         helicopterPlayer.onStructureCrash = (crashPos) => {
             console.log("AW189: Structural collision crash sustained at position:", crashPos);
-            if (soundManager) {
-                soundManager.stopHelicopterEngine();
-            }
+            handleCrash(crashPos, false);
         };
 
     }, undefined, (error) => {
