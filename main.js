@@ -213,6 +213,16 @@ mainBase = new MainBase(scene, loadingManager, (spawnPosition) => {
 
         developerTool = new DeveloperTool(weatherSystem, windFarm, mainBase, helicopterPlayer, camera, renderer, rescueMission ? rescueMission.winchSystem : null);
 
+        // Test Spawn: Display survivor model on main base disembark location at launch (persistent view)
+        if (rescueMission && rescueMission.survivor) {
+            rescueMission.survivor.disembarkNextToHelicopter(
+                { x: -14.00, y: 4.80, z: 3.35, rotationY: 1.5533 },
+                1.5533,
+                4.80,
+                false // Disable auto-fade for test verification
+            );
+        }
+
         if (camera && inputManager) {
             const elevationAngle = 45 * (Math.PI / 180); 
             const cosAlpha = Math.cos(elevationAngle);

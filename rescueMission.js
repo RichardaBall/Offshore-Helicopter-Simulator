@@ -23,7 +23,7 @@ export class RescueMission {
         this.winchSystem = new WinchSystem(scene);
 
         // Initialize Survivor Character module (loads GLB models from assets/character/)
-        this.survivor = new Survivor(scene);
+        this.survivor = new Survivor(scene, loadingManager);
         this.survivor.loadModels();
         
         this.survivorAttached = false;
@@ -308,7 +308,7 @@ export class RescueMission {
 
         // Check landing on main base platform and system shutdown to trigger survivor disembarkation
         if (this.state === 'RETURNING' && helicopterPlayer && helicopterPlayer.model) {
-            const spawnPos = (mainBase && mainBase.getSpawnPosition) ? mainBase.getSpawnPosition() : new THREE.Vector3(0, 10.2, 0);
+            const spawnPos = (mainBase && mainBase.getSpawnPosition) ? mainBase.getSpawnPosition() : new THREE.Vector3(3.3690, 6.2360, 0.4548);
             const horizDist = Math.hypot(heliPos.x - spawnPos.x, heliPos.z - spawnPos.z);
             const vertDist = Math.abs(heliPos.y - spawnPos.y);
 
@@ -338,14 +338,18 @@ export class RescueMission {
             if (isLanded && allSystemsOff) {
                 this.state = 'DISEMBARKING';
 
-                const heliRotY = helicopterPlayer.model.rotation ? helicopterPlayer.model.rotation.y : 0;
                 if (this.survivor) {
-                    this.survivor.disembarkNextToHelicopter(heliPos, heliRotY, spawnPos.y);
+                    this.survivor.disembarkNextToHelicopter(
+                        { x: -14.00, y: 4.80, z: 3.35, rotationY: 1.5533 },
+                        1.5533,
+                        4.80,
+                        true
+                    );
                 }
             }
         }
 
-        // Check completion when survivor disembarks and completes waving bye sequence
+        // Check completion when survivor disembarks, waves, and finishes fading out
         if (this.state === 'DISEMBARKING' && this.survivor && this.survivor.currentState === SurvivorState.COMPLETED) {
             this.state = 'COMPLETED';
 
