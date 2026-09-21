@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { WinchSystem } from './winch.js';
 import { Survivor, SurvivorState } from './survivor.js';
 
@@ -16,13 +17,12 @@ export class RescueMission {
         this.flashTimer = 0;
         this.rescueFreq = 270.0;
         this.raftTemplate = null;
+        this.raftMixer = null;
+        this.raftAnimations = [];
         this.isRaftLoading = false;
         this.usingFallback = false;
         
-        // Initialize dedicated Winch System module
         this.winchSystem = new WinchSystem(scene);
-
-        // Initialize Survivor Character module (loads GLB models from assets/character/)
         this.survivor = new Survivor(scene, loadingManager);
         this.survivor.loadModels();
         
@@ -33,18 +33,14 @@ export class RescueMission {
         this.statusDisplay = null;
         this._initUI();
         
-        // Pre-instantiate light in scene at startup to prevent Three.js shader recompilation spikes
         this.flashingLight = new THREE.PointLight(0xff0000, 0, 35);
         this.scene.add(this.flashingLight);
 
-        // Pre-create fallback mesh in scene so geometry/materials compile on initialization
         this._initFallbackMesh();
-
-        // Preload liferaft.glb in background and pre-add to scene graph
         this._preloadLiferaft();
         
-        // Automatically trigger initial distress rescue mission after a random time between 10 and 30 seconds (10,000 to 30,000 ms) for testing
-        const initialDelay = 10000 + Math.random() * 20000;
+        // Updated initial delay: 2 to 5 minutes (120,000ms - 300,000ms)
+        const initialDelay = 120000 + Math.random() * 180000;
         setTimeout(() => {
             this.startMission();
         }, initialDelay);
@@ -61,18 +57,28 @@ export class RescueMission {
 
     _preloadLiferaft() {
         this.isRaftLoading = true;
-        const loader = new GLTFLoader(this.loadingManager);
+        const loader = this.loadingManager ? new GLTFLoader(this.loadingManager) : new GLTFLoader();
+        
+        const dracoLoader = new DRACOLoader();
+        dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+        loader.setDRACOLoader(dracoLoader);
+
         loader.load('liferaft.glb', (gltf) => {
             this.raftTemplate = gltf.scene;
             this.raftTemplate.scale.set(2.0, 2.0, 2.0);
             this.raftTemplate.position.set(0, -9999, 0);
             this.raftTemplate.visible = false;
             
-            // Pre-add to scene graph so shaders & GPU texture buffers warm up at startup
+            this.raftAnimations = gltf.animations;
+            if (gltf.animations && gltf.animations.length > 0) {
+                this.raftMixer = new THREE.AnimationMixer(this.raftTemplate);
+                const action = this.raftMixer.clipAction(gltf.animations[0]);
+                action.play();
+            }
+
             this.scene.add(this.raftTemplate);
             this.isRaftLoading = false;
 
-            // Upgrade seamlessly if mission started with fallback mesh
             if (this.state === 'ACTIVE' && this.usingFallback) {
                 this._upgradeToGltfRaft();
             }
@@ -142,7 +148,6 @@ export class RescueMission {
         this.survivorAttached = false;
         this.usingFallback = false;
         
-        // Pick random frequency between 200.0 and 400.0 (steps of 10) excluding WTG/Mainbase frequencies (210, 240, 290, 350)
         const excluded = [210, 240, 290, 350];
         const possible = [];
         for (let f = 200; f <= 400; f += 10) {
@@ -152,7 +157,6 @@ export class RescueMission {
         }
         this.rescueFreq = possible[Math.floor(Math.random() * possible.length)];
         
-        // Pick a random distress location at sea (800m to 1500m away from origin)
         const angle = Math.random() * Math.PI * 2;
         const distance = 900 + Math.random() * 600;
         const x = Math.cos(angle) * distance;
@@ -161,7 +165,6 @@ export class RescueMission {
         
         this.state = 'ACTIVE';
 
-        // Register distress frequency in NavRadio stations
         if (window.navRadio) {
             window.navRadio.stations[this.rescueFreq] = {
                 name: `SOS (${this.rescueFreq} kHz)`,
@@ -175,16 +178,19 @@ export class RescueMission {
             this.pagerElement.style.display = 'block';
         }
 
-        // Position light at mission target without creating new light object
         if (this.flashingLight) {
             this.flashingLight.position.set(this.raftPosition.x, 1.8, this.raftPosition.z);
         }
 
-        // Activate pre-loaded mesh directly by updating position and visibility
         if (this.raftTemplate) {
             this.raftMesh = this.raftTemplate;
             this.raftMesh.position.copy(this.raftPosition);
             this.raftMesh.visible = true;
+            if (this.raftMixer && this.raftAnimations.length > 0) {
+                this.raftMixer.stopAllAction();
+                const action = this.raftMixer.clipAction(this.raftAnimations[0], this.raftMesh);
+                action.reset().play();
+            }
         } else {
             this.usingFallback = true;
             this.raftMesh = this.fallbackMesh;
@@ -192,12 +198,10 @@ export class RescueMission {
             this.raftMesh.visible = true;
         }
 
-        // Spawn survivor on raft with updated forward position configuration ({ x: 0.00, y: 0.20, z: 1.75, rotationY: 0.00, scale: 1.00 })
         if (this.survivor) {
             this.survivor.spawnOnRaft(
                 this.raftPosition, 
-                Math.random() * Math.PI * 2, 
-                { x: 0.00, y: 0.20, z: 1.75, rotationY: 0.00, scale: 1.00 }
+                Math.random() * Math.PI * 2
             );
         }
     }
@@ -211,10 +215,14 @@ export class RescueMission {
         this.raftMesh = this.raftTemplate;
         this.raftMesh.position.copy(this.raftPosition);
         this.raftMesh.visible = true;
+        if (this.raftMixer && this.raftAnimations.length > 0) {
+            this.raftMixer.stopAllAction();
+            const action = this.raftMixer.clipAction(this.raftAnimations[0], this.raftMesh);
+            action.reset().play();
+        }
     }
 
     toggleWinch(helicopterPlayer) {
-        // Permit winch operation at any time (winchSystem internally checks for landing gear status)
         this.winchSystem.toggleWinch(helicopterPlayer);
         
         if (this.winchSystem.winchState === 'DOWN' && this.statusDisplay && this.state !== 'IDLE' && this.state !== 'COMPLETED') {
@@ -223,21 +231,22 @@ export class RescueMission {
     }
 
     update(delta, helicopterPlayer, mainBase) {
-        // Update dedicated Winch System physics unconditionally so cable animates outside active missions
         if (this.winchSystem) {
             this.winchSystem.update(delta, helicopterPlayer);
         }
 
+        if (this.raftMixer) {
+            this.raftMixer.update(delta);
+        }
+
         const hookPos = this.winchSystem ? this.winchSystem.getHookPosition() : null;
 
-        // Update survivor animation frame loop and cable track
         if (this.survivor) {
             this.survivor.update(delta, hookPos);
         }
 
         if (this.state === 'IDLE' || this.state === 'COMPLETED') return;
         
-        // Flash red beacon light on liferaft
         if (this.flashingLight && !this.survivorAttached) {
             this.flashTimer += delta * 7;
             this.flashingLight.intensity = Math.sin(this.flashTimer) > 0 ? 10.0 : 0.5;
@@ -250,7 +259,6 @@ export class RescueMission {
         const heliPos = helicopterPlayer.model.position;
         const distToRaft = heliPos.distanceTo(this.raftPosition);
         
-        // Mission state transitions: Sighted raft
         if (this.state === 'ACTIVE' && distToRaft < 150) {
             this.state = 'ON_SCENE';
             if (this.statusDisplay) {
@@ -258,7 +266,6 @@ export class RescueMission {
             }
         }
         
-        // Check survivor pickup when winch hook reaches liferaft surface
         if (!this.survivorAttached && this.raftMesh && this.raftMesh.visible && hookPos) {
             const distHookToRaft = hookPos.distanceTo(this.raftPosition);
             if (distHookToRaft < 4.5) {
@@ -267,7 +274,6 @@ export class RescueMission {
                 if (this.statusDisplay) {
                     this.statusDisplay.textContent = `HOOKED! RETRACT WINCH`;
                 }
-                // Instantly hide liferaft upon winch contact
                 if (this.raftMesh) {
                     this.raftMesh.visible = false;
                     this.raftMesh = null;
@@ -275,14 +281,12 @@ export class RescueMission {
                 if (this.flashingLight) {
                     this.flashingLight.intensity = 0;
                 }
-                // Attach survivor to winch hook with raising animation (raising.glb)
                 if (this.survivor) {
                     this.survivor.attachToWinch();
                 }
             }
         }
         
-        // Check when winch is fully raised back up with survivor
         if (this.survivorAttached && this.state === 'WINCHING') {
             const winchRetracted = this.winchSystem.winchHeight <= 0.15 || 
                                    this.winchSystem.winchState === 'UP' || 
@@ -293,34 +297,28 @@ export class RescueMission {
                     this.statusDisplay.textContent = `SURVIVOR ONBOARD! RETURN BASE`;
                 }
 
-                // Hide pager UI display immediately once survivor is hoisted into the cabin
                 if (this.pagerElement) {
                     this.pagerElement.style.display = 'none';
                 }
 
-                // Hide survivor mesh inside cabin ("onboard")
                 if (this.survivor) {
                     this.survivor.enterCabin();
                 }
                 
-                // Unregister rescue frequency from navRadio
                 if (window.navRadio && window.navRadio.stations[this.rescueFreq]) {
                     delete window.navRadio.stations[this.rescueFreq];
                 }
             }
         }
 
-        // Check landing on main base platform and system shutdown to trigger survivor disembarkation
         if (this.state === 'RETURNING' && helicopterPlayer && helicopterPlayer.model) {
             const spawnPos = (mainBase && mainBase.getSpawnPosition) ? mainBase.getSpawnPosition() : new THREE.Vector3(3.3690, 6.2360, 0.4548);
             const horizDist = Math.hypot(heliPos.x - spawnPos.x, heliPos.z - spawnPos.z);
             const vertDist = Math.abs(heliPos.y - spawnPos.y);
 
-            // Verify landing gear touchdown on helipad deck
             const isLanded = (horizDist < 35.0 && vertDist < 5.0) && 
                              (helicopterPlayer.isGrounded || Math.abs(helicopterPlayer.currentMoveSpeed || 0) < 1.0 || (helicopterPlayer.verticalSpeed !== undefined && Math.abs(helicopterPlayer.verticalSpeed) < 0.5));
 
-            // Check if all systems are turned off (Engine Off, Fuel Pump Off, Electrical/Battery Off)
             const engineOff = helicopterPlayer.engineOn === false || 
                               helicopterPlayer.isEngineRunning === false || 
                               helicopterPlayer.engineState === 'OFF' || 
@@ -353,7 +351,6 @@ export class RescueMission {
             }
         }
 
-        // Check completion when survivor disembarks, waves, and finishes fading out
         if (this.state === 'DISEMBARKING' && this.survivor && this.survivor.currentState === SurvivorState.COMPLETED) {
             this.state = 'COMPLETED';
 
@@ -365,8 +362,8 @@ export class RescueMission {
                 this.flashingLight.intensity = 0;
             }
 
-            // Start random timer between 10 and 30 seconds (10,000 to 30,000 ms) until next rescue mission for testing
-            const randomDelay = 10000 + Math.random() * 20000;
+            // Updated respawn delay after mission completion also set to 2 to 5 minutes
+            const randomDelay = 120000 + Math.random() * 180000;
             setTimeout(() => {
                 this.state = 'IDLE';
                 this.startMission();
