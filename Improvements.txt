@@ -1,4 +1,5 @@
-- Scenery objects to improve immersion.
-- Fix the rotor stutter
+- Heli Rotor sync stutter
 - Search light automation, comes on at night when near the helipad and locks onto centre of helipad. Also comes on when rescue mission at night and locks onto liferaft. 
+-Performance, load all models to memory, lag issues fix. Load rescue missions in before arriving at them. Look at what worked for WTG and apply to rescue missions.
+- Sounds
 
