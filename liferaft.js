@@ -1,5 +1,6 @@
-import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
-import { GLTFLoader } from 'https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
 export class LiferaftManager {
     constructor(scene, loadingManager = null) {
@@ -8,6 +9,8 @@ export class LiferaftManager {
         this.isDeployed = false;
         this.raftGroup.visible = false;
         this.scene.add(this.raftGroup);
+
+        this.mixer = null;
 
         // Create Restart Button DOM Element positioned at the top center with transparent background
         this.restartBtn = document.createElement('button');
@@ -54,18 +57,28 @@ export class LiferaftManager {
         document.body.appendChild(this.restartBtn);
 
         // Load the custom liferaft.glb model using loadingManager for preloading
-        const loader = new GLTFLoader(loadingManager);
+        const loader = loadingManager ? new GLTFLoader(loadingManager) : new GLTFLoader();
+        
+        const dracoLoader = new DRACOLoader();
+        dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+        loader.setDRACOLoader(dracoLoader);
+
         loader.load(
             './liferaft.glb',
             (gltf) => {
                 const model = gltf.scene;
                 model.scale.set(1, 1, 1);
                 this.raftGroup.add(model);
+
+                if (gltf.animations && gltf.animations.length > 0) {
+                    this.mixer = new THREE.AnimationMixer(model);
+                    const action = this.mixer.clipAction(gltf.animations[0]);
+                    action.play();
+                }
+
                 console.log("liferaft.glb loaded successfully.");
             },
-            (xhr) => {
-                // Loading progress optional
-            },
+            undefined,
             (error) => {
                 console.error("An error occurred while loading liferaft.glb:", error);
             }
@@ -76,11 +89,9 @@ export class LiferaftManager {
         if (this.isDeployed) return;
         this.isDeployed = true;
 
-        // Position the life raft model at the sea crash coordinates (floating on water level y = 0.0)
         this.raftGroup.position.set(crashPosition.x, 0.0, crashPosition.z);
         this.raftGroup.visible = true;
         
-        // Show the restart flight button on screen
         if (this.restartBtn) {
             this.restartBtn.style.display = 'block';
         }
@@ -96,6 +107,10 @@ export class LiferaftManager {
 
     update(delta) {
         if (!this.isDeployed || !this.raftGroup) return;
+
+        if (this.mixer) {
+            this.mixer.update(delta);
+        }
 
         // Add a gentle bobbing motion on the water waves
         const time = Date.now() * 0.002;
