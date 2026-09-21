@@ -200,15 +200,20 @@ export class RescueMission {
     }
 
     toggleWinch(helicopterPlayer) {
-        if (this.state === 'IDLE' || this.state === 'COMPLETED') return;
+        // Permit winch operation at any time (winchSystem internally checks for landing gear status)
         this.winchSystem.toggleWinch(helicopterPlayer);
         
-        if (this.winchSystem.winchState === 'DOWN' && this.statusDisplay) {
+        if (this.winchSystem.winchState === 'DOWN' && this.statusDisplay && this.state !== 'IDLE' && this.state !== 'COMPLETED') {
             this.statusDisplay.textContent = `HOOK DOWN. PRESS [X]`;
         }
     }
 
     update(delta, helicopterPlayer, mainBase) {
+        // Update dedicated Winch System physics unconditionally so cable animates outside active missions
+        if (this.winchSystem) {
+            this.winchSystem.update(delta, helicopterPlayer);
+        }
+
         if (this.state === 'IDLE' || this.state === 'COMPLETED') return;
         
         // Flash red beacon light on liferaft
@@ -231,9 +236,6 @@ export class RescueMission {
                 this.statusDisplay.textContent = `SIGHTED. HOVER & [X]`;
             }
         }
-        
-        // Update dedicated Winch System
-        this.winchSystem.update(delta, helicopterPlayer);
         
         // Handle winch state notifications & survivor hook check
         const hookPos = this.winchSystem.getHookPosition();
