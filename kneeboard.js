@@ -106,6 +106,11 @@ export class Kneeboard {
                 <div style="display: flex; justify-content: space-between;"><span>Toggle Kneeboard:</span><strong>[K]</strong></div>
             </div>
 
+            <div style="margin-bottom: 7px; font-size: 11px;">
+                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 3px;">5. RESCUE</div>
+                <div style="display: flex; justify-content: space-between;"><span>Winch:</span><strong>[X]</strong></div>
+            </div>
+
             <div style="font-size: 11px; border-top: 1px dashed #6b634b; padding-top: 5px; margin-top: 5px;">
                 <div style="font-weight: bold; text-decoration: underline; margin-bottom: 4px;">IN-FLIGHT NOTES:</div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
@@ -153,11 +158,17 @@ export class Kneeboard {
                 <div style="display: flex; justify-content: space-between;"><span>• Landing Light:</span><strong>AS REQ [L]</strong></div>
             </div>
 
-            <div style="font-size: 11px;">
+            <div style="margin-bottom: 7px; font-size: 11px;">
                 <div style="font-weight: bold; text-decoration: underline; margin-bottom: 3px;">5. SHUTDOWN</div>
                 <div style="display: flex; justify-content: space-between;"><span>• Fuel Pump:</span><strong>OFF [F]</strong></div>
                 <div style="display: flex; justify-content: space-between;"><span>• Engine Cutoff:</span><strong>OFF [E]</strong></div>
                 <div style="display: flex; justify-content: space-between;"><span>• Battery Switch:</span><strong>OFF [Q]</strong></div>
+            </div>
+
+            <div style="font-size: 11px;">
+                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 3px;">6. WINCH OPERATION</div>
+                <div style="display: flex; justify-content: space-between;"><span>• Landing Gear:</span><strong>UP [G]</strong></div>
+                <div style="display: flex; justify-content: space-between;"><span>• Winch Up/Down:</span><strong>[X]</strong></div>
             </div>
         `;
 

@@ -6,7 +6,7 @@
 
 
 
-A 3D offshore helicopter flight simulation game built using Three.js, WebGL, and modular ES JavaScript. The simulation features an AW189 helicopter operating around an offshore main base environment with dynamic weather systems, custom flight physics, procedural Web Audio sound synthesis, real-time HUD instrumentation, a 3D tactical NDB bearing indicator, and a realistic aerial firefighting water/foam drop system.
+A 3D offshore helicopter flight simulation game built using Three.js, WebGL, and modular ES JavaScript. The simulation features an AW189 helicopter operating around an offshore main base environment with dynamic weather systems, custom flight physics, procedural Web Audio sound synthesis, real-time HUD instrumentation, a 3D tactical NDB bearing indicator, a realistic aerial firefighting water/foam drop system, and an interactive Search \& Rescue (SAR) winch mission system.
 
 
 
@@ -22,7 +22,7 @@ A 3D offshore helicopter flight simulation game built using Three.js, WebGL, and
 
 \* \*\*`sceneSetup.js`\*\*: Initializes the Three.js core environment (`Scene`, `Camera`, `WebGLRenderer`, directional/ambient lighting, fog, and the dynamic ocean water plane).
 
-\* \*\*`player.js`\*\*: Controls `HelicopterPlayer` flight physics, mass calculations, rotor rotation, autorotation mechanics, landing gear drag, fuel consumption rates, strobe low-fuel warnings, and engine state.
+\* \*\*`player.js`\*\*: Controls `HelicopterPlayer` flight physics, mass calculations, rotor rotation, autorotation mechanics, landing gear drag, fuel consumption rates, strobe low-fuel warnings (<= 500 kg orange, <= 100 kg rapid flash red), and engine state.
 
 \* \*\*`inputManager.js`\*\*: Translates raw user input into flight movement vectors, prioritizing keyboard arrow keys, managing camera distance via mouse scroll, and detecting space bar input for water dispensing.
 
@@ -32,25 +32,25 @@ A 3D offshore helicopter flight simulation game built using Three.js, WebGL, and
 
 \* \*\*`weather.js`\*\*: Controls `WeatherSystem` (day/night celestial cycle, fog density, wind forces, drag/lift multipliers, and rain particle systems).
 
-\* \*\*`navRadio.js`\*\*: NDB Navigation Radio module rendering a compact bottom-right avionics tuning panel (`\[N]`) tracking frequency tuning and signal lock to the 210 kHz main base.
+\* \*\*`navRadio.js`\*\*: NDB Navigation Radio module rendering a compact bottom-right avionics tuning panel (`\[N]`) tracking frequency tuning in 10 kHz steps and signal lock to the 210.0 kHz main base, WTG beacons (350.0, 240.0, 290.0 kHz), or dynamic SAR distress frequencies.
 
-\* \*\*`navIndicator.js`\*\*: 3D tactical NDB bearing indicator module; attaches a transparent ring bezel and a neon-glowing amber pointer needle directly to the helicopter rotor hub to display relative bearing to the NDB target.
+\* \*\*`navIndicator.js`\*\*: 3D tactical NDB bearing indicator module; attaches a transparent ring bezel and a neon-glowing amber pointer needle directly to the helicopter rotor hub (visible when Nav Radio is powered on and locked to a valid frequency) to display relative bearing to the NDB target.
 
-\* \*\*`kneeboard.js`\*\*: Pilot Kneeboard module rendering a styled 4-page interactive kneeboard (`\[K]`) featuring flight controls reference, pre-flight/flight checklists, fuel and passenger weight manifests with seating arrangement, and an aviation chart displaying Main Base NDB frequency at 210.0 kHz.
+\* \*\*`kneeboard.js`\*\*: Pilot Kneeboard module rendering a styled 4-page interactive kneeboard (`\[K]`) featuring flight controls reference, pre-flight/flight checklists, fuel and passenger weight manifests with seating arrangement, and an aviation chart displaying NDB beacon frequencies.
 
-\* \*\*`windFarm.js`\*\*: Wind Farm module spawning 3 wind turbines located to the North-East with independently rotating rotor blades and flashing red obstruction warning lights.
+\* \*\*`windFarm.js`\*\*: Wind Farm module spawning 3 wind turbines arranged in a circular formation facing inward around the main base origin, equipped with NDB beacons (350.0 kHz, 240.0 kHz, 290.0 kHz), independently rotating rotor blades, and flashing red obstruction warning lights.
 
-\* \*\*`mainbase.js`\*\*: Main Base module loading the offshore platform model serving as the primary helipad, spawn point, and NDB beacon target.
+\* \*\*`mainbase.js`\*\*: Main Base module loading the offshore platform model serving as the primary helipad, spawn point, and 210.0 kHz NDB beacon target.
 
 \* \*\*`liferaft.js`\*\*: Liferaft module managing emergency sea crash deployment and survival raft simulation upon water impacts.
 
 \* \*\*`sirenSystem.js`\*\*: Emergency beacon system managing industrial rotating red siren lights and dynamic spotlights on the main base during fire emergencies.
 
-\* \*\*`utilities.js`\*\*: Developer tool module (`DeveloperTool`) providing a UI panel (`\[T]`) for toggling day/night time, weather conditions, free camera mode, and a Winch Position Calibrator panel with live X,Y,Z offset sliders.
+\* \*\*`utilities.js`\*\*: Developer tool module (`DeveloperTool`) providing a UI panel (`\[T]`) for toggling day/night time, weather conditions, free camera mode, and a Winch Position Calibrator panel with live X, Y, Z offset sliders.
 
-\* \*\*`winch.js`\*\*: Dedicated rescue winch system module managing cable physics, hook deployment/retrieval states, and real-time helicopter mounting offset transformations.
+\* \*\*`winch.js`\*\*: Dedicated rescue winch system module managing cable physics, hook deployment/retrieval states (`\[X]`), and real-time helicopter mounting offset transformations.
 
-\* \*\*`rescueMission.js`\*\*: Rescue mission module managing emergency distress calls, liferaft spawning with flashing beacons, survivor hoisting, and return to main base.
+\* \*\*`rescueMission.js`\*\*: Search \& Rescue mission module managing emergency SOS distress calls, pager UI alerts, dynamic NDB frequency broadcasts, liferaft spawning with flashing red beacons, winch hook survivor hoisting, and auto-repeating mission timers (configured for 10–30s testing intervals).
 
 
 
@@ -92,13 +92,15 @@ A 3D offshore helicopter flight simulation game built using Three.js, WebGL, and
 
 \* \*\*Aircraft Model\*\*: AW189 helicopter with animated rotor blades and aerodynamic properties.
 
-\* \*\*Environment \& Lighting\*\*: Offshore main base platform equipped with helipad and structure lights set against dynamic ocean waves and day/night weather cycles, complemented by a North-East wind farm featuring 3 animated wind turbines with synchronized flashing red obstruction lights and emergency siren systems.
+\* \*\*Environment \& Lighting\*\*: Offshore main base platform equipped with helipad and structure lights set against dynamic ocean waves and day/night weather cycles, complemented by a circular wind farm featuring 3 inward-facing wind turbines with NDB radio beacons (350.0, 240.0, 290.0 kHz), synchronized flashing red obstruction lights, and emergency siren systems.
 
-\* \*\*Flight Systems\*\*: Modeled autorotation, landing gear drag penalties, dynamic fuel consumption based on mass and weather, and strobe lighting fuel warnings (<= 500 kg orange, <= 100 kg rapid flash red).
+\* \*\*Flight Systems\*\*: Modeled autorotation, landing gear drag penalties, dynamic fuel consumption based on mass and weather, and exterior strobe lighting low-fuel warnings (<= 500 kg fast orange blink, <= 100 kg rapid red blink).
 
 \* \*\*Firefighting Water Drop System\*\*: High-density volumetric particle system (`waterSystem.js`) featuring procedural aerated white mist/foam textures, gravitational acceleration, and aerodynamic slipstream drag sweep matching real-world helicopter water bucket drops.
 
-\* \*\*Instrumentation \& Navigation\*\*: Real-time HUD, NDB avionics tuning panel, 3D cockpit-attached bearing indicator needle pointing toward the main base beacon, an interactive 4-page pilot kneeboard, and a rescue winch system with live developer position calibration.
+\* \*\*Instrumentation \& Navigation\*\*: Real-time HUD, NDB avionics tuning panel (10 kHz steps), 3D cockpit-attached bearing indicator needle pointing toward tuned NDB beacon targets, an interactive 4-page pilot kneeboard with weight/balance manifests and aviation charts, and an SOS pager UI display.
+
+\* \*\*Search \& Rescue (SAR) \& Winch System\*\*: Emergency distress pager alerts with randomized NDB beacon frequencies, sea-based liferaft locate-and-rescue mechanics, dedicated rescue winch module (`winch.js`) with cable physics and hook deployment (`\[X]`), survivor hoisting, live developer calibration panel (`\[T]`), and configurable auto-spawning mission timers.
 
 
 
@@ -108,7 +110,7 @@ A 3D offshore helicopter flight simulation game built using Three.js, WebGL, and
 
 \* \*\*`helicopter.glb`\*\*: Primary 3D AW189 helicopter model with rotor animation mixers.
 
-\* \*\*`mainbase.glb`\*\*: Offshore platform 3D model serving as the primary helipad, spawn point, and NDB beacon target.
+\* \*\*`mainbase.glb`\*\*: Offshore platform 3D model serving as the primary helipad, spawn point, and NDB beacon target (210.0 kHz).
 
 \* \*\*`WTG.glb`\*\*: 3D wind turbine model utilized by the wind farm module.
 

@@ -8,6 +8,7 @@ export class NavRadio {
     constructor(player, rigAlphaPosition) {
         this.player = player;
         this.powered = true;
+        window.navRadio = this;
 
         const basePos = rigAlphaPosition || new THREE.Vector3(0, 0, 0);
 
